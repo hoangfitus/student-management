@@ -9,6 +9,14 @@ This is a lightweight web application built with TypeScript, React, and SQLite f
 - **Export Data:** Save student data as an Excel file.
 - **SQLite Database Integration:** Data persistence on the user's local machine.
 
+## Screenshots
+
+![Main Screen](./screenshots/main-screen.png)
+![Add Student Screen](./screenshots/add-student-screen.png)
+![Add Error Screen](./screenshots/add-error-screen.png)
+![Main Student Screen](./screenshots/main-student-screen.png)
+![Find Student Screen](./screenshots/find-student-screen.png)
+
 ## Source Code Structure
 
 ```plaintext
@@ -79,4 +87,5 @@ To export the student data to Excel, click the "Export to Excel" button on the m
 ## Usage Notes
 
 - **SQLite File:** The database file (`db.sqlite`) is automatically created in the `db/` folder if it doesn't already exist.
+
 # student-management
