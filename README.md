@@ -87,5 +87,3 @@ To export the student data to Excel, click the "Export to Excel" button on the m
 ## Usage Notes
 
 - **SQLite File:** The database file (`db.sqlite`) is automatically created in the `db/` folder if it doesn't already exist.
-
-# student-management
