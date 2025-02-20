@@ -48,7 +48,7 @@ const StudentList: React.FC<StudentListProps> = ({
         overflowX: "auto",
         borderRadius: 10,
         minWidth: "800px",
-        maxWidth: "100%",
+        width: "110%",
       }}
     >
       <Table>

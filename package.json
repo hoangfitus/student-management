@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx server/server.ts",
     "dev": "vite",
+    "prebuild": "rm -rf dist && tsx server/prebuild.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

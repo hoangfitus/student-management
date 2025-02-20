@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Container, Typography, Divider, Button, TextField, Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
 import StudentForm from './components/StudentForm';
 import StudentList from './components/StudentList';
-import { Student } from './types';
+import { Student } from './types";
+import Footer from "./components/Footer";
 
 const API_BASE = "http://localhost:3001";
 
@@ -154,6 +155,8 @@ const App: React.FC = () => {
           />
         </DialogContent>
       </Dialog>
+
+      <Footer />
     </Container>
   );
 };
