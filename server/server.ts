@@ -5,6 +5,7 @@ import path from "path";
 import cors from "cors";
 import XLSX from "xlsx";
 import { fileURLToPath } from "url";
+import multer from "multer";
 import logger from "./logger";
 
 // Định nghĩa interface cho sinh viên
@@ -237,6 +238,89 @@ app.get("/export", (req: Request, res: Response) => {
     res.send(excelBuffer);
   });
 });
+
+// Cấu hình multer để lưu file tạm vào folder "uploads"
+const upload = multer({ dest: "uploads/" });
+
+// POST /import/excel - Import dữ liệu từ file Excel
+app.post(
+  "/import/excel",
+  upload.single("file"),
+  (req: Request, res: Response) => {
+    logger.info("POST /import/excel called");
+    if (!req.file) {
+      logger.warn("Excel import attempted without a file upload");
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    try {
+      // Đọc file Excel dưới dạng buffer
+      const fileBuffer = fs.readFileSync(req.file.path);
+      // Đọc workbook từ buffer
+      const workbook = XLSX.read(fileBuffer, {
+        type: "buffer",
+        raw: false,
+        codepage: 65001,
+      });
+      // Giả sử dữ liệu nằm ở sheet đầu tiên
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      // Chuyển sheet thành JSON, đảm bảo header trùng với tên các trường (mssv, name, dob, gender, department, course, program, address, email, phone, status)
+      const records: Student[] = XLSX.utils.sheet_to_json(worksheet, {
+        defval: "",
+      });
+
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        const stmt = db.prepare(`INSERT OR REPLACE INTO students 
+        (mssv, name, dob, gender, department, course, program, address, email, phone, status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        for (const record of records) {
+          stmt.run(
+            record.mssv,
+            record.name,
+            record.dob,
+            record.gender,
+            record.department,
+            record.course,
+            record.program,
+            record.address,
+            record.email,
+            record.phone,
+            record.status
+          );
+        }
+        stmt.finalize();
+        db.run("COMMIT", (err) => {
+          if (err) {
+            logger.error(
+              `Error committing Excel import transaction: ${err.message}`
+            );
+            return res.status(500).json({ error: err.message });
+          }
+          logger.info(`Imported ${records.length} student records from Excel`);
+          res.json({
+            message: "Excel data imported successfully",
+            imported: records.length,
+          });
+        });
+      });
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`Excel import error: ${err.message}`);
+      res.status(500).json({ error: err.message });
+    } finally {
+      // Xóa file Excel tạm sau khi xử lý
+      fs.unlink(req.file.path, (unlinkErr) => {
+        if (unlinkErr) {
+          logger.error(
+            `Error deleting uploaded Excel file: ${unlinkErr.message}`
+          );
+        }
+      });
+    }
+  }
+);
 
 // GET /version - Trả về thông tin version và build date
 app.get("/version", (req: Request, res: Response) => {

@@ -16,6 +16,9 @@ const App: React.FC = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
+  // Reference cho input file CSV ẩn
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const fetchStudents = (search: string, page: number, rowsPerPage:number) => {
     fetch(`${API_BASE}/students?search=${encodeURIComponent(search)}&page=${page}&limit=${rowsPerPage}`)
       .then(res => res.json())
@@ -89,6 +92,40 @@ const App: React.FC = () => {
     window.open(`${API_BASE}/export`, "_blank");
   };
 
+  const handleImportExcelClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Hàm xử lý khi chọn file Excel
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Kiểm tra phần mở rộng file
+      const allowedExtensions = [".xlsx", ".xls"];
+      const fileExtension = file.name
+        .slice(file.name.lastIndexOf("."))
+        .toLowerCase();
+      if (!allowedExtensions.includes(fileExtension)) {
+        alert("Vui lòng chọn file Excel (.xlsx, .xls)");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", file);
+      fetch(`${API_BASE}/import/excel`, {
+        method: "POST",
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then(() => {
+          fetchStudents(searchTerm, facultyFilter, page, rowsPerPage);
+        })
+        .catch((err) => console.error(err));
+    }
+  };
+
   return (
     <Container
       sx={{
@@ -117,11 +154,23 @@ const App: React.FC = () => {
         </Button>
         <Button
           variant="outlined"
-          color="secondary"
-          onClick={exportExcel}
+          color="info"
+          onClick={handleImportExcelClick}
+          sx={{ mr: 2 }}
         >
+          Import CSV
+        </Button>
+        <Button variant="outlined" color="secondary" onClick={exportExcel}>
           Export Excel
         </Button>
+        {/* File input ẩn */}
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
       </Box>
 
       <TextField
