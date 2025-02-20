@@ -80,7 +80,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       <DialogTitle>Quản lý {title}</DialogTitle>
       <DialogContent>
         {/* Phần thêm mới */}
-        <Box display="flex" alignItems="center" mb={2}>
+        <Box display="flex" alignItems="center" mb={2} p={2}>
           <TextField
             label={`Thêm ${title}`}
             value={newValue}
