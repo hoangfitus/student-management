@@ -273,7 +273,7 @@ app.post("/students", (req: Request, res: Response) => {
   const params = [
     student.mssv,
     student.name,
-    student.dob,
+    new Date(student.dob).toLocaleDateString("vi-VN"),
     student.gender,
     student.faculty,
     student.course,
@@ -376,7 +376,7 @@ app.get("/export", (req: Request, res: Response) => {
 // Cấu hình multer để lưu file tạm vào folder "uploads"
 const upload = multer({ dest: "uploads/" });
 
-function ExcelDateToJSDate(serial) {
+function ExcelDateToJSDate(serial: number): Date {
   const utc_days = Math.floor(serial - 25569);
   const utc_value = utc_days * 86400;
   const date_info = new Date(utc_value * 1000);
@@ -400,6 +400,17 @@ function ExcelDateToJSDate(serial) {
     minutes,
     seconds
   );
+}
+
+function formatPhone(phone: string | number): string {
+  let phoneStr = "";
+  if (typeof phone === "number") {
+    phoneStr = phone.toString();
+  } else if (typeof phone === "string") {
+    phoneStr = phone;
+  }
+  // Giả sử số điện thoại cần có 10 chữ số, thêm số 0 ở đầu nếu thiếu
+  return phoneStr.padStart(10, "0");
 }
 
 // POST /import/excel - Import dữ liệu từ file Excel
@@ -443,14 +454,14 @@ app.post(
           stmt.run(
             record.mssv,
             record.name,
-            ExcelDateToJSDate(record.dob).toLocaleDateString("vi-VN"),
+            ExcelDateToJSDate(Number(record.dob)).toLocaleDateString("vi-VN"),
             record.gender,
             record.faculty,
             record.course,
             record.program,
             record.address,
             record.email,
-            record.phone,
+            formatPhone(record.phone),
             record.status
           );
         }

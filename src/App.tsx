@@ -39,7 +39,7 @@ const App: React.FC = () => {
   const [faculties, setFaculties] = useState<CategoryItem[]>([]);
   const [statuses, setStatuses] = useState<CategoryItem[]>([]);
   const [programs, setPrograms] = useState<CategoryItem[]>([]);
-  console.log(students);
+
   // State cho modal danh mục chung
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [currentCatType, setCurrentCatType] = useState<
@@ -358,6 +358,7 @@ const App: React.FC = () => {
             label="Lọc theo Khoa"
             onChange={handleFacultyChange}
           >
+            <MenuItem value="">Tất cả</MenuItem>
             {faculties.map((fac, idx) => (
               <MenuItem key={idx} value={fac.name}>
                 {fac.name}

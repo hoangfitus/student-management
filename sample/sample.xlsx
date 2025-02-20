@@ -1,5 +1,5 @@
 mssv,name,dob,gender,faculty,course,program,address,email,phone,status
-22127001,Bui Anh,2000-01-15,Nam,Công nghệ thông tin,2022,Chất lượng cao,"123 Nguyen Trai, HCMC",bui.anh@example.com,0123456789,Đã thôi học
+22127001,Bui Anh,2000/01/15,Nam,Công nghệ thông tin,2022,Chất lượng cao,"123 Nguyen Trai, HCMC",bui.anh@example.com,0123456789,Đã thôi học
 22127002,Dang Bao,2000-02-20,Nam,Công nghệ thông tin,2022,Chất lượng cao,"456 Le Loi, HCMC",dang.bao@example.com,0123456790,Đang học
 22127003,Do Xuan,2000-03-05,Nam,Công nghệ thông tin,2022,Chất lượng cao,"789 Tran Hung Dao, HCMC",do.xuan@example.com,0123456791,Tạm dừng học
 22127004,Hoang Chi,2000-04-10,Nữ,Công nghệ thông tin,2022,Chất lượng cao,"101 Nguyen Hue, HCMC",hoang.chi@example.com,0123456792,Đang học
