@@ -1,13 +1,21 @@
-# Student Management Web Application
+# Student Management Web Application - Version 2.0
 
-This is a lightweight web application built with TypeScript, React, and SQLite for managing a list of students. The app allows users to add, delete, update, and search for students. Data is persisted in an SQLite database stored locally, and the app supports exporting student data as an Excel file.
+This is a lightweight web application built with TypeScript, React, and SQLite for managing a list of students. Version 2.0 introduces significant enhancements over the previous version, including advanced category management, extended search capabilities, sample data import, logging mechanisms, and version display.
 
-## Features
+## New Features in Version 2.0
 
-- **Add, Edit, Delete, and Search Students**
-- **Pagination and Dynamic Display Count:** Choose to display 5, 10, or 15 students per page.
-- **Export Data:** Save student data as an Excel file.
-- **SQLite Database Integration:** Data persistence on the user's local machine.
+- **Category Management:**
+  - **Rename and Add New Categories:** Manage Faculty, Student Status, and Program via a dedicated modal.
+  - **Automatic Update:** When a category is renamed, all related student records update automatically via triggers to ensure data consistency.
+- **Extended Search:**
+  - Filter students by Faculty and search by MSSV or Name.
+- **Data Import/Export Enhancements:**
+  - **Excel Import/Export:** Improved handling for dates and phone numbers, with proper formatting (dates displayed as dd/mm/yyyy and phone numbers retaining leading zeros).
+  - **Sample Data Import:** Easily import sample student data from a provided sample file (`sample/sample.xlsx`) by clicking a dedicated button.
+- **Logging Mechanism:**
+  - Integrated logging using Winston for troubleshooting production issues and audit purposes. All logs are stored in the `logs/` folder.
+- **Version and Build Date Display:**
+  - The application footer displays the current version and build date (auto-generated during build).
 
 ## Screenshots
 
@@ -15,7 +23,12 @@ This is a lightweight web application built with TypeScript, React, and SQLite f
 ![Add Student Screen](./screenshots/add-student-screen.png)
 ![Add Error Screen](./screenshots/add-error-screen.png)
 ![Main Student Screen](./screenshots/main-student-screen.png)
-![Find Student Screen](./screenshots/find-student-screen.png)
+![Find Student By Faculty Screen](./screenshots/find-by-faculty-screen.png)
+![Find Student By Faculty and Name Screen](./screenshots/find-by-fandn-screen.png)
+![Category Management Screen](./screenshots/category-management-screen.png)
+![Add Category Screen](./screenshots/add-category-screen.png)
+![Edit Category Screen](./screenshots/edit-category-screen.png)
+![Import Excel Screen](./screenshots/import-excel-screen.png)
 
 ## Source Code Structure
 
@@ -24,17 +37,27 @@ student-management/
 ├── public/             # Static assets (app icon)
 ├── src/
 │   ├── components/     # UI components
+│   ├── hooks/          # Custom hooks
 │   ├── App.tsx         # Main application component
 │   ├── main.tsx        # Application entry point
 │   ├── types.d.ts      # Data types
 │   ├── vite-env.d.ts   # Vite environment variables
+├── server/
+│   ├── server.ts       # Node.js backend server
+│   ├── logger.ts       # Winston logger configuration
+│   ├── prebuild.ts     # Pre-build script to create version file
 ├── db/                 # Folder containing the SQLite database file
+├── logs/               # Folder containing log files
+├── sample/             # Folder containing sample data for import
+├── screenshots/        # Screenshots of the application
 ├── eslint.config.js    # ESLint configuration
-├── server.ts           # Node.js backend server to handle SQLite operations
+ operations
+│   index.html          # Main HTML file
 ├── package.json        # Project metadata and dependencies
 ├── tsconfig.app.json   # TypeScript configuration for the frontend
 ├── tsconfig.node.json  # TypeScript configuration for the backend
 ├── tsconfig.json       # TypeScript configuration
+├── version.json        # Version and build date information
 └── vite.config.ts      # Vite configuration
 ```
 
@@ -58,6 +81,8 @@ student-management/
 
 ### Frontend
 
+Start the Vite development server:
+
 ```bash
 pnpm dev
 ```
@@ -65,6 +90,8 @@ pnpm dev
 Access the app at `http://localhost:5173`
 
 ### Backend (SQLite Server)
+
+Start the Node.js backend server:
 
 ```bash
 pnpm start
@@ -74,16 +101,37 @@ This will start the Node.js backend to manage database operations.
 
 ## Building for Production
 
+To build the application for production, run:
+
 ```bash
 pnpm build
 ```
 
-The compiled files will be available in the `dist/` directory.
+The compiled files will be available in the `dist/` directory. This command also generates a `version.json` file containing the version and build date information.
 
-## Exporting Student Data as Excel
+## Data Import/Export
 
-To export the student data to Excel, click the "Export to Excel" button on the main page. The Excel file will be saved in the default `Downloads` directory.
+- Export Excel: Click the "Export Excel" button on the main screen to download student data as an Excel file.
+
+- Import Excel: Use the "Import Excel" button to import student data from an Excel file.
+
+- Import Sample Data: Click the "Thêm dữ liệu mẫu" button to import sample data from the file sample/sample.xlsx.
+
+## Version Information
+
+The application automatically generates a version.json file during the build process (using the version number from package.json) and displays the current version and build date in the footer.
+
+## Logging
+
+All backend operations are logged using Winston. The log files are stored in the logs/ folder for troubleshooting and audit purposes.
 
 ## Usage Notes
 
-- **SQLite File:** The database file (`db.sqlite`) is automatically created in the `db/` folder if it doesn't already exist.
+- **Database**:
+  The SQLite database file (db.sqlite) is automatically created in the db/ folder if it does not already exist.
+
+- **Category Updates**:
+  When a category (Faculty, Student Status, or Program) is updated, related student records are automatically updated.
+
+- **Date and Phone Formatting**:
+  Student date of birth is returned in the dd/mm/yyyy format, and phone numbers retain any leading zeros.
