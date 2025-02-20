@@ -7,21 +7,7 @@ import XLSX from "xlsx";
 import { fileURLToPath } from "url";
 import multer from "multer";
 import logger from "./logger";
-
-// Định nghĩa interface cho sinh viên
-interface Student {
-  mssv: string;
-  name: string;
-  dob: string;
-  gender: string;
-  department: string;
-  course: string;
-  program: string;
-  address: string;
-  email: string;
-  phone: string;
-  status: string;
-}
+import { Student } from "../src/types";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,6 +39,9 @@ const db: Database = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+// Bật hỗ trợ khóa ngoại trong SQLite
+db.run("PRAGMA foreign_keys = ON");
+
 // Nếu file db không tồn tại, tạo bảng
 if (!dbExists) {
   db.serialize(() => {
@@ -63,7 +52,7 @@ if (!dbExists) {
         name TEXT,
         dob TEXT,
         gender TEXT,
-        department TEXT,
+        faculty TEXT,
         course TEXT,
         program TEXT,
         address TEXT,
@@ -76,6 +65,151 @@ if (!dbExists) {
           logger.error(`Error creating table: ${err.message}`);
         } else {
           logger.info('Table "students" created successfully.');
+        }
+      }
+    );
+
+    // Bảng faculties
+    db.run(
+      `CREATE TABLE IF NOT EXISTS faculties (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+      )`,
+      (err) => {
+        if (err) {
+          logger.error(`Error creating faculties table: ${err.message}`);
+        } else {
+          logger.info('Table "faculties" created successfully.');
+          // Thêm các giá trị mặc định
+          const defaultFaculties = [
+            "Công nghệ thông tin",
+            "Luật",
+            "Tiếng Anh thương mại",
+            "Tiếng Nhật",
+            "Tiếng Pháp",
+          ];
+          const stmt = db.prepare("INSERT INTO faculties (name) VALUES (?)");
+          for (const faculty of defaultFaculties) {
+            stmt.run(faculty);
+          }
+          stmt.finalize();
+          // Sau khi tạo bảng faculties và thêm giá trị mặc định:
+          db.run(
+            `CREATE TRIGGER IF NOT EXISTS update_students_department
+            AFTER UPDATE ON faculties
+            FOR EACH ROW
+            BEGIN
+            UPDATE students SET faculty = NEW.name WHERE faculty = OLD.name;
+            END;`,
+            (err) => {
+              if (err) {
+                logger.error(
+                  `Error creating trigger update_students_department: ${err.message}`
+                );
+              } else {
+                logger.info(
+                  "Trigger update_students_department created successfully."
+                );
+              }
+            }
+          );
+        }
+      }
+    );
+
+    // Bảng student_statuses
+    db.run(
+      `CREATE TABLE IF NOT EXISTS student_statuses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+      )`,
+      (err) => {
+        if (err) {
+          logger.error(`Error creating student_statuses table: ${err.message}`);
+        } else {
+          logger.info('Table "student_statuses" created successfully.');
+          // Thêm các giá trị mặc định
+          const defaultStatuses = [
+            "Đang học",
+            "Đã tốt nghiệp",
+            "Đã thôi học",
+            "Tạm dừng học",
+          ];
+          const stmt = db.prepare(
+            "INSERT INTO student_statuses (name) VALUES (?)"
+          );
+          for (const status of defaultStatuses) {
+            stmt.run(status);
+          }
+          stmt.finalize();
+          // Sau khi tạo bảng student_statuses và thêm giá trị mặc định:
+          db.run(
+            `CREATE TRIGGER IF NOT EXISTS update_students_status
+             AFTER UPDATE ON student_statuses
+             FOR EACH ROW
+             BEGIN
+               UPDATE students SET status = NEW.name WHERE status = OLD.name;
+             END;`,
+            (err) => {
+              if (err) {
+                logger.error(
+                  `Error creating trigger update_students_status: ${err.message}`
+                );
+              } else {
+                logger.info(
+                  "Trigger update_students_status created successfully."
+                );
+              }
+            }
+          );
+        }
+      }
+    );
+
+    // Bảng programs
+    db.run(
+      `CREATE TABLE IF NOT EXISTS programs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+      )`,
+      (err) => {
+        if (err) {
+          logger.error(`Error creating programs table: ${err.message}`);
+        } else {
+          logger.info('Table "programs" created successfully.');
+          // Thêm các giá trị mặc định
+          const defaultPrograms = [
+            "Đại trà",
+            "Chất lượng cao",
+            "Cử nhân tài năng",
+            "Việt Pháp",
+            "Tăng cường tiếng anh",
+          ];
+          const stmt = db.prepare("INSERT INTO programs (name) VALUES (?)");
+          for (const program of defaultPrograms) {
+            stmt.run(program);
+          }
+          stmt.finalize();
+          // Sau khi tạo bảng programs và thêm giá trị mặc định:
+          db.run(
+            `CREATE TRIGGER IF NOT EXISTS update_students_program
+             AFTER UPDATE ON programs
+             FOR EACH ROW
+             BEGIN
+               UPDATE students SET program = NEW.name WHERE program = OLD.name;
+             END;`,
+            (err) => {
+              if (err) {
+                logger.error(
+                  `Error creating trigger update_students_program: ${err.message}`
+                );
+              } else {
+                logger.info(
+                  "Trigger update_students_program created successfully."
+                );
+              }
+            }
+          );
         }
       }
     );
@@ -105,7 +239,7 @@ app.get("/students", (req: Request, res: Response) => {
   let additionalWhere = "";
 
   if (faculty) {
-    additionalWhere = " AND department LIKE ?";
+    additionalWhere = " AND faculty LIKE ?";
     countParams.push(facultyParam);
     dataParams.push(facultyParam);
   }
@@ -135,13 +269,13 @@ app.get("/students", (req: Request, res: Response) => {
 app.post("/students", (req: Request, res: Response) => {
   const student: Student = req.body;
   const sql =
-    "INSERT INTO students (mssv, name, dob, gender, department, course, program, address, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO students (mssv, name, dob, gender, faculty, course, program, address, email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
   const params = [
     student.mssv,
     student.name,
     student.dob,
     student.gender,
-    student.department,
+    student.faculty,
     student.course,
     student.program,
     student.address,
@@ -168,12 +302,12 @@ app.put("/students/:mssv", (req: Request, res: Response) => {
   const student: Student = req.body;
   const mssv = req.params.mssv;
   const sql =
-    "UPDATE students SET name=?, dob=?, gender=?, department=?, course=?, program=?, address=?, email=?, phone=?, status=? WHERE mssv=?";
+    "UPDATE students SET name=?, dob=?, gender=?, faculty=?, course=?, program=?, address=?, email=?, phone=?, status=? WHERE mssv=?";
   const params = [
     student.name,
     student.dob,
     student.gender,
-    student.department,
+    student.faculty,
     student.course,
     student.program,
     student.address,
@@ -242,30 +376,60 @@ app.get("/export", (req: Request, res: Response) => {
 // Cấu hình multer để lưu file tạm vào folder "uploads"
 const upload = multer({ dest: "uploads/" });
 
+function ExcelDateToJSDate(serial) {
+  const utc_days = Math.floor(serial - 25569);
+  const utc_value = utc_days * 86400;
+  const date_info = new Date(utc_value * 1000);
+
+  const fractional_day = serial - Math.floor(serial) + 0.0000001;
+
+  let total_seconds = Math.floor(86400 * fractional_day);
+
+  const seconds = total_seconds % 60;
+
+  total_seconds -= seconds;
+
+  const hours = Math.floor(total_seconds / (60 * 60));
+  const minutes = Math.floor(total_seconds / 60) % 60;
+
+  return new Date(
+    date_info.getFullYear(),
+    date_info.getMonth(),
+    date_info.getDate(),
+    hours,
+    minutes,
+    seconds
+  );
+}
+
 // POST /import/excel - Import dữ liệu từ file Excel
 app.post(
   "/import/excel",
   upload.single("file"),
   (req: Request, res: Response) => {
     logger.info("POST /import/excel called");
-    if (!req.file) {
+    let filePath = "";
+    if (req.query.sample === "true") {
+      filePath = path.join(__dirname, "..", "sample", "sample.xlsx");
+      logger.info(`Importing sample data from ${filePath}`);
+    } else if (req.file) {
+      filePath = req.file.path;
+    }
+
+    if (filePath === "") {
       logger.warn("Excel import attempted without a file upload");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     try {
-      // Đọc file Excel dưới dạng buffer
-      const fileBuffer = fs.readFileSync(req.file.path);
-      // Đọc workbook từ buffer
+      const fileBuffer = fs.readFileSync(filePath);
       const workbook = XLSX.read(fileBuffer, {
         type: "buffer",
         raw: false,
         codepage: 65001,
       });
-      // Giả sử dữ liệu nằm ở sheet đầu tiên
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
-      // Chuyển sheet thành JSON, đảm bảo header trùng với tên các trường (mssv, name, dob, gender, department, course, program, address, email, phone, status)
       const records: Student[] = XLSX.utils.sheet_to_json(worksheet, {
         defval: "",
       });
@@ -273,15 +437,15 @@ app.post(
       db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         const stmt = db.prepare(`INSERT OR REPLACE INTO students 
-        (mssv, name, dob, gender, department, course, program, address, email, phone, status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+          (mssv, name, dob, gender, faculty, course, program, address, email, phone, status) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         for (const record of records) {
           stmt.run(
             record.mssv,
             record.name,
-            record.dob,
+            ExcelDateToJSDate(record.dob).toLocaleDateString("vi-VN"),
             record.gender,
-            record.department,
+            record.faculty,
             record.course,
             record.program,
             record.address,
@@ -307,20 +471,194 @@ app.post(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error(`Excel import error: ${err.message}`);
+      if (req.query.sample === "true") {
+        logger.error(`Error importing sample data: ${err.message}`);
+      } else {
+        logger.error(`Excel import error: ${err.message}`);
+      }
       res.status(500).json({ error: err.message });
     } finally {
-      // Xóa file Excel tạm sau khi xử lý
-      fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) {
-          logger.error(
-            `Error deleting uploaded Excel file: ${unlinkErr.message}`
-          );
-        }
-      });
+      // Only unlink if req.file exists
+      if (req.file && req.file.path) {
+        fs.unlink(req.file.path, (unlinkErr) => {
+          if (unlinkErr) {
+            logger.error(
+              `Error deleting uploaded Excel file: ${unlinkErr.message}`
+            );
+          }
+        });
+      }
     }
   }
 );
+
+// GET /version - Trả về thông tin version và build date
+app.get("/version", (req: Request, res: Response) => {
+  logger.info("GET /version called");
+  const versionFilePath = path.join(__dirname, "..", "version.json");
+  fs.readFile(versionFilePath, "utf8", (err, data) => {
+    if (err) {
+      logger.error(`Error reading version file: ${err.message}`);
+      return res.status(500).json({ error: err.message });
+    }
+    try {
+      const versionData = JSON.parse(data);
+      res.json(versionData);
+    } catch (parseErr) {
+      logger.error(`Error parsing version file: ${parseErr.message}`);
+      res.status(500).json({ error: parseErr.message });
+    }
+  });
+});
+
+// GET /faculties - Lấy danh sách khoa
+app.get("/faculties", (req: Request, res: Response) => {
+  logger.info("GET /faculties called");
+  db.all("SELECT * FROM faculties ORDER BY name", (err, rows) => {
+    if (err) {
+      logger.error(`Error fetching faculties: ${err.message}`);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// POST /faculties - Thêm mới
+app.post("/faculties", (req: Request, res: Response) => {
+  logger.info("POST /faculties called to add new faculty");
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.run("INSERT INTO faculties (name) VALUES (?)", [name], function (err) {
+    if (err) {
+      logger.error(`Error adding faculty: ${err.message}`);
+      return res.status(400).json({ error: err.message });
+    }
+    logger.info(`Faculty added successfully: ${name}`);
+    res.json({ message: "Faculty added successfully", id: this.lastID, name });
+  });
+});
+
+// PUT /faculties/:id - Cập nhật thông tin khoa
+app.put("/faculties/:id", (req: Request, res: Response) => {
+  logger.info("PUT /faculties/:id called");
+  const { name } = req.body;
+  const id = req.params.id;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.run(
+    "UPDATE faculties SET name = ? WHERE id = ?",
+    [name, id],
+    function (err) {
+      if (err) {
+        logger.error(`Error updating faculty id ${id}: ${err.message}`);
+        return res.status(400).json({ error: err.message });
+      }
+      logger.info(`Faculty id ${id} updated successfully to: ${name}`);
+      res.json({ message: "Faculty updated successfully", id, name });
+    }
+  );
+});
+
+// GET /student_statuses - Lấy danh sách tình trạng sinh viên
+app.get("/student_statuses", (req: Request, res: Response) => {
+  logger.info("GET /student_statuses called");
+  db.all("SELECT * FROM student_statuses ORDER BY name", (err, rows) => {
+    if (err) {
+      logger.error(`Error fetching student statuses: ${err.message}`);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// POST /student_statuses - Thêm tình trạng sinh viên mới
+app.post("/student_statuses", (req: Request, res: Response) => {
+  logger.info("POST /student_statuses called");
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.run(
+    "INSERT INTO student_statuses (name) VALUES (?)",
+    [name],
+    function (err) {
+      if (err) {
+        logger.error(`Error adding student status: ${err.message}`);
+        return res.status(400).json({ error: err.message });
+      }
+      logger.info(`Student status added successfully: ${name}`);
+      res.json({
+        message: "Student status added successfully",
+        id: this.lastID,
+        name,
+      });
+    }
+  );
+});
+
+// PUT /student_statuses/:id - Cập nhật tình trạng sinh viên
+app.put("/student_statuses/:id", (req: Request, res: Response) => {
+  logger.info("PUT /student_statuses/:id called");
+  const { name } = req.body;
+  const id = req.params.id;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.run(
+    "UPDATE student_statuses SET name = ? WHERE id = ?",
+    [name, id],
+    function (err) {
+      if (err) {
+        logger.error(`Error updating student status id ${id}: ${err.message}`);
+        return res.status(400).json({ error: err.message });
+      }
+      logger.info(`Student status id ${id} updated successfully to: ${name}`);
+      res.json({ message: "Student status updated successfully", id, name });
+    }
+  );
+});
+
+// GET /programs - Lấy danh sách chương trình
+app.get("/programs", (req: Request, res: Response) => {
+  logger.info("GET /programs called");
+  db.all("SELECT * FROM programs ORDER BY name", (err, rows) => {
+    if (err) {
+      logger.error(`Error fetching programs: ${err.message}`);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// POST /programs - Thêm chương trình mới
+app.post("/programs", (req: Request, res: Response) => {
+  logger.info("POST /programs called");
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.run("INSERT INTO programs (name) VALUES (?)", [name], function (err) {
+    if (err) {
+      logger.error(`Error adding program: ${err.message}`);
+      return res.status(400).json({ error: err.message });
+    }
+    logger.info(`Program added successfully: ${name}`);
+    res.json({ message: "Program added successfully", id: this.lastID, name });
+  });
+});
+
+// PUT /programs/:id - Cập nhật thông tin chương trình
+app.put("/programs/:id", (req: Request, res: Response) => {
+  logger.info("PUT /programs/:id called");
+  const { name } = req.body;
+  const id = req.params.id;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.run(
+    "UPDATE programs SET name = ? WHERE id = ?",
+    [name, id],
+    function (err) {
+      if (err) {
+        logger.error(`Error updating program id ${id}: ${err.message}`);
+        return res.status(400).json({ error: err.message });
+      }
+      logger.info(`Program id ${id} updated successfully to: ${name}`);
+      res.json({ message: "Program updated successfully", id, name });
+    }
+  );
+});
 
 // GET /version - Trả về thông tin version và build date
 app.get("/version", (req: Request, res: Response) => {

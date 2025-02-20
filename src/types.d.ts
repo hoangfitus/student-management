@@ -3,7 +3,7 @@ export interface Student {
   name: string;
   dob: string;
   gender: string;
-  department: string;
+  faculty: string;
   course: string;
   program: string;
   address: string;

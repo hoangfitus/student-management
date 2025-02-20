@@ -99,7 +99,7 @@ const StudentList: React.FC<StudentListProps> = ({
               <TableCell>{student.name}</TableCell>
               <TableCell>{student.dob}</TableCell>
               <TableCell>{student.gender}</TableCell>
-              <TableCell>{student.department}</TableCell>
+              <TableCell>{student.faculty}</TableCell>
               <TableCell
                 sx={{
                   textAlign: "center",

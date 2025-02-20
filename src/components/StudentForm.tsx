@@ -7,18 +7,12 @@ import { Student } from "../types";
 
 interface StudentFormProps {
   defaultValues?: Student;
+  faculties: string[];
+  programs: string[];
+  statuses: string[];
   onSubmit: (data: Student) => void;
   onCancel?: () => void;
 }
-
-const departments = [
-  "Khoa Luật",
-  "Khoa Tiếng Anh thương mại",
-  "Khoa Tiếng Nhật",
-  "Khoa Tiếng Pháp",
-];
-
-const statuses = ["Đang học", "Đã tốt nghiệp", "Đã thôi học", "Tạm dừng học"];
 
 const genders = ["Nam", "Nữ", "Khác"];
 
@@ -28,7 +22,7 @@ const schema = yup
     name: yup.string().required("Họ tên là bắt buộc"),
     dob: yup.string().required("Ngày sinh là bắt buộc"),
     gender: yup.string().required("Giới tính là bắt buộc"),
-    department: yup.string().required("Khoa là bắt buộc"),
+    faculty: yup.string().required("Khoa là bắt buộc"),
     course: yup.string().required("Khóa là bắt buộc"),
     program: yup.string().required("Chương trình là bắt buộc"),
     address: yup.string().required("Địa chỉ là bắt buộc"),
@@ -49,6 +43,9 @@ const schema = yup
 
 const StudentForm: React.FC<StudentFormProps> = ({
   defaultValues,
+  faculties,
+  programs,
+  statuses,
   onSubmit,
   onCancel,
 }) => {
@@ -64,7 +61,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
       name: "",
       dob: "",
       gender: "",
-      department: "",
+      faculty: "",
       course: "",
       program: "",
       address: "",
@@ -141,13 +138,13 @@ const StudentForm: React.FC<StudentFormProps> = ({
             label="Khoa"
             fullWidth
             defaultValue=""
-            {...register("department")}
-            error={!!errors.department}
-            helperText={errors.department?.message}
+            {...register("faculty")}
+            error={!!errors.faculty}
+            helperText={errors.faculty?.message}
           >
-            {departments.map((dept) => (
-              <MenuItem key={dept} value={dept}>
-                {dept}
+            {faculties.map((falculty) => (
+              <MenuItem key={falculty} value={falculty}>
+                {falculty}
               </MenuItem>
             ))}
           </TextField>
@@ -161,23 +158,39 @@ const StudentForm: React.FC<StudentFormProps> = ({
             helperText={errors.course?.message}
           />
         </Grid2>
-        <Grid2 size={{ xs: 12 }}>
+        <Grid2 size={{ xs: 12, sm: 6 }}>
           <TextField
+            select
             label="Chương trình"
             fullWidth
+            defaultValue=""
             {...register("program")}
             error={!!errors.program}
             helperText={errors.program?.message}
-          />
+          >
+            {programs.map((program) => (
+              <MenuItem key={program} value={program}>
+                {program}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid2>
-        <Grid2 size={{ xs: 12 }}>
+        <Grid2 size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Địa chỉ"
+            select
+            label="Tình trạng sinh viên"
             fullWidth
-            {...register("address")}
-            error={!!errors.address}
-            helperText={errors.address?.message}
-          />
+            defaultValue=""
+            {...register("status")}
+            error={!!errors.status}
+            helperText={errors.status?.message}
+          >
+            {statuses.map((status) => (
+              <MenuItem key={status} value={status}>
+                {status}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid2>
         <Grid2 size={{ xs: 12, sm: 6 }}>
           <TextField
@@ -196,23 +209,15 @@ const StudentForm: React.FC<StudentFormProps> = ({
             error={!!errors.phone}
             helperText={errors.phone?.message}
           />
-        </Grid2>
+        </Grid2>{" "}
         <Grid2 size={{ xs: 12 }}>
           <TextField
-            select
-            label="Tình trạng sinh viên"
+            label="Địa chỉ"
             fullWidth
-            defaultValue=""
-            {...register("status")}
-            error={!!errors.status}
-            helperText={errors.status?.message}
-          >
-            {statuses.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </TextField>
+            {...register("address")}
+            error={!!errors.address}
+            helperText={errors.address?.message}
+          />
         </Grid2>
         <Grid2
           size={{ xs: 12 }}
