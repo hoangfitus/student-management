@@ -1,10 +1,10 @@
 {
   "name": "student-management",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0",
   "type": "module",
   "scripts": {
-    "start": "tsx server.ts",
+    "start": "tsx server/server.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -22,6 +22,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "sqlite3": "^5.1.7",
+    "winston": "^3.17.0",
     "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },

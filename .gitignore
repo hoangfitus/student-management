@@ -5,6 +5,7 @@ node_modules/
 
 # Build output
 dist/
+version.json
 
 # Vite cache
 .vite/
@@ -30,3 +31,6 @@ Thumbs.db
 
 # Database
 db/
+
+# Logs
+logs/
