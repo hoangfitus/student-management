@@ -203,7 +203,7 @@ const App: React.FC = () => {
           onClick={handleImportExcelClick}
           sx={{ mr: 2 }}
         >
-          Import CSV
+          Import Excel
         </Button>
         <Button variant="outlined" color="secondary" onClick={exportExcel}>
           Export Excel
