@@ -196,7 +196,7 @@ const App: React.FC = () => {
       }
       const formData = new FormData();
       formData.append("file", file);
-      fetch(`${API_BASE}/import/data`, {
+      fetch(`${API_BASE}/import`, {
         method: "POST",
         body: formData,
       })
@@ -210,7 +210,7 @@ const App: React.FC = () => {
 
   // Handler cho "Thêm dữ liệu mẫu"
   const importSampleData = () => {
-    fetch(`${API_BASE}/import/data?sample=true`, { method: "POST" })
+    fetch(`${API_BASE}/import?sample=true`, { method: "POST" })
       .then((res) => res.json())
       .then(() => {
         fetchStudents(searchTerm, facultyFilter, page, rowsPerPage);
