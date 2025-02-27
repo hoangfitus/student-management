@@ -346,61 +346,102 @@ app.delete("/students/:mssv", (req: Request, res: Response) => {
   });
 });
 
-// GET /export - Xuất dữ liệu ra file Excel
-app.get("/export", (req: Request, res: Response) => {
-  logger.info("GET /export called to export data as Excel");
+// Helper function to format a date value to "dd/mm/yyyy"
+function formatDateForCSV(value: string | number | Date): string {
+  let d: Date;
+  console.log(value);
+  if (typeof value === "number") {
+    // Convert Excel serial date to JavaScript Date
+    d = new Date((value - 25569) * 86400 * 1000);
+  } else if (typeof value === "string") {
+    // Try to parse the string as a date
+    d = new Date(value);
+  } else if (value instanceof Date) {
+    d = value;
+  } else {
+    return "";
+  }
+  if (isNaN(d.getTime())) {
+    return String(value);
+  }
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
 
+// GET /export - Export data as Excel or CSV based on query parameter
+app.get("/export", (req: Request, res: Response) => {
+  logger.info("GET /export called to export data");
+  const exportType = req.query.type
+    ? req.query.type.toString().toLowerCase()
+    : "excel";
   db.all("SELECT * FROM students", (err, rows: Student[]) => {
     if (err) {
-      logger.error(`Error exporting Excel: ${err.message}`);
+      logger.error(`Error exporting data: ${err.message}`);
       res.status(500).json({ error: err.message });
       return;
     }
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-    const excelBuffer = XLSX.write(workbook, {
-      type: "buffer",
-      bookType: "xlsx",
-    });
-    res.setHeader("Content-Disposition", "attachment; filename=students.xlsx");
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    logger.info(`Exported ${rows.length} student records to Excel`);
-    res.send(excelBuffer);
+    if (exportType === "csv") {
+      const headers = [
+        "mssv",
+        "name",
+        "dob",
+        "gender",
+        "faculty",
+        "course",
+        "program",
+        "address",
+        "email",
+        "phone",
+        "status",
+      ];
+      const csvRows = [headers.join(",")];
+      rows.forEach((row) => {
+        const values = headers.map((header) => {
+          let val = row[header as keyof Student];
+          if (header === "dob") {
+            // Format the date field to dd/mm/yyyy
+            val = formatDateForCSV(val);
+          }
+          // Ensure string values with commas are enclosed in quotes
+          if (typeof val === "string" && val.includes(",")) {
+            val = `"${val}"`;
+          }
+          return val;
+        });
+        csvRows.push(values.join(","));
+      });
+      const csvData = csvRows.join("\n");
+      res.setHeader("Content-Disposition", "attachment; filename=students.csv");
+      res.setHeader("Content-Type", "text/csv");
+      logger.info(`Exported ${rows.length} student records to CSV`);
+      res.send(csvData);
+    } else {
+      // Export as Excel
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+      const excelBuffer = XLSX.write(workbook, {
+        type: "buffer",
+        bookType: "xlsx",
+      });
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=students.xlsx"
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      logger.info(`Exported ${rows.length} student records to Excel`);
+      res.send(excelBuffer);
+    }
   });
 });
 
 // Cấu hình multer để lưu file tạm vào folder "uploads"
 const upload = multer({ dest: "uploads/" });
-
-function ExcelDateToJSDate(serial: number): Date {
-  const utc_days = Math.floor(serial - 25569);
-  const utc_value = utc_days * 86400;
-  const date_info = new Date(utc_value * 1000);
-
-  const fractional_day = serial - Math.floor(serial) + 0.0000001;
-
-  let total_seconds = Math.floor(86400 * fractional_day);
-
-  const seconds = total_seconds % 60;
-
-  total_seconds -= seconds;
-
-  const hours = Math.floor(total_seconds / (60 * 60));
-  const minutes = Math.floor(total_seconds / 60) % 60;
-
-  return new Date(
-    date_info.getFullYear(),
-    date_info.getMonth(),
-    date_info.getDate(),
-    hours,
-    minutes,
-    seconds
-  );
-}
 
 function formatPhone(phone: string | number): string {
   let phoneStr = "";
@@ -413,38 +454,84 @@ function formatPhone(phone: string | number): string {
   return phoneStr.padStart(10, "0");
 }
 
-// POST /import/excel - Import dữ liệu từ file Excel
+// POST /import/data - Import dữ liệu
 app.post(
-  "/import/excel",
+  "/import/data",
   upload.single("file"),
   (req: Request, res: Response) => {
-    logger.info("POST /import/excel called");
+    logger.info("POST /import/data called");
     let filePath = "";
+    let fileType = "";
     if (req.query.sample === "true") {
+      // Use sample file from folder "sample" (assumed to be Excel if not specified)
       filePath = path.join(__dirname, "..", "sample", "sample.xlsx");
+      fileType = path.extname(filePath).toLowerCase();
       logger.info(`Importing sample data from ${filePath}`);
     } else if (req.file) {
       filePath = req.file.path;
+      fileType = path.extname(req.file.originalname).toLowerCase();
     }
 
-    if (filePath === "") {
-      logger.warn("Excel import attempted without a file upload");
+    if (!filePath) {
+      logger.warn("Data import attempted without a file upload");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     try {
-      const fileBuffer = fs.readFileSync(filePath);
-      const workbook = XLSX.read(fileBuffer, {
-        type: "buffer",
-        raw: false,
-        codepage: 65001,
-      });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const records: Student[] = XLSX.utils.sheet_to_json(worksheet, {
-        defval: "",
-      });
+      let records: Student[] = [];
+      if (fileType === ".csv") {
+        // Process CSV file
+        const csvData = fs.readFileSync(filePath, "utf8");
+        const lines = csvData
+          .split(/\r?\n/)
+          .filter((line) => line.trim() !== "");
+        if (lines.length < 2)
+          throw new Error("CSV file is empty or missing header");
+        const headers = lines[0].split(",");
+        records = lines.slice(1).map((line) => {
+          const values: string[] = [];
+          let inQuotes = false;
+          let value = "";
+          for (const char of line) {
+            if (char === '"' && !inQuotes) {
+              inQuotes = true;
+            } else if (char === '"' && inQuotes) {
+              inQuotes = false;
+            } else if (char === "," && !inQuotes) {
+              values.push(value.trim());
+              value = "";
+            } else {
+              value += char;
+            }
+          }
+          values.push(value.trim());
 
+          const record: Student = {} as Student;
+          headers.forEach((header, i) => {
+            if (header.trim() === "dob") {
+              record[header.trim()] = values[i]
+                ? values[i].trim().replace("-", "/")
+                : "";
+            } else record[header.trim()] = values[i] ? values[i].trim() : "";
+          });
+          return record as Student;
+        });
+      } else if (fileType === ".xlsx" || fileType === ".xls") {
+        // Process Excel file
+        const fileBuffer = fs.readFileSync(filePath);
+        const workbook = XLSX.read(fileBuffer, {
+          type: "buffer",
+          cellDates: true,
+          raw: false,
+          codepage: 65001,
+        });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        records = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      } else {
+        return res.status(400).json({ error: "Unsupported file type" });
+      }
+      console.log(records);
       db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         const stmt = db.prepare(`INSERT OR REPLACE INTO students 
@@ -454,7 +541,9 @@ app.post(
           stmt.run(
             record.mssv,
             record.name,
-            ExcelDateToJSDate(Number(record.dob)).toLocaleDateString("vi-VN"),
+            record.dob.includes("/")
+              ? record.dob
+              : new Date(record.dob).toLocaleDateString("vi-VN"),
             record.gender,
             record.faculty,
             record.course,
@@ -469,33 +558,29 @@ app.post(
         db.run("COMMIT", (err) => {
           if (err) {
             logger.error(
-              `Error committing Excel import transaction: ${err.message}`
+              `Error committing data import transaction: ${err.message}`
             );
             return res.status(500).json({ error: err.message });
           }
-          logger.info(`Imported ${records.length} student records from Excel`);
+          logger.info(
+            `Imported ${records.length} student records from ${fileType}`
+          );
           res.json({
-            message: "Excel data imported successfully",
+            message: "Data imported successfully",
             imported: records.length,
           });
         });
       });
     } catch (error: unknown) {
       const err = error as Error;
-      if (req.query.sample === "true") {
-        logger.error(`Error importing sample data: ${err.message}`);
-      } else {
-        logger.error(`Excel import error: ${err.message}`);
-      }
+      logger.error(`Data import error: ${err.message}`);
       res.status(500).json({ error: err.message });
     } finally {
-      // Only unlink if req.file exists
-      if (req.file && req.file.path) {
+      // Only delete the uploaded file if it exists (do not delete sample file)
+      if (!req.query.sample && req.file && req.file.path) {
         fs.unlink(req.file.path, (unlinkErr) => {
           if (unlinkErr) {
-            logger.error(
-              `Error deleting uploaded Excel file: ${unlinkErr.message}`
-            );
+            logger.error(`Error deleting uploaded file: ${unlinkErr.message}`);
           }
         });
       }

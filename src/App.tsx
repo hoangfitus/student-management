@@ -168,31 +168,35 @@ const App: React.FC = () => {
   };
 
   const exportExcel = () => {
-    window.open(`${API_BASE}/export`, "_blank");
+    window.open(`${API_BASE}/export?type=excel`, "_blank");
   };
 
-  const handleImportExcelClick = () => {
+  const exportCSV = () => {
+    window.open(`${API_BASE}/export?type=csv`, "_blank");
+  };
+
+  const handleImportDataClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // Xử lý chọn file Excel
+  // Xử lý chọn file Excel và CSV
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      const allowedExtensions = [".xlsx", ".xls"];
+      const allowedExtensions = [".xlsx", ".xls", ".csv"];
       const fileExtension = file.name
         .slice(file.name.lastIndexOf("."))
         .toLowerCase();
       if (!allowedExtensions.includes(fileExtension)) {
-        alert("Vui lòng chọn file Excel (.xlsx, .xls)");
+        alert("Vui lòng chọn file .xlsx, .xls hoặc .csv");
         return;
       }
       const formData = new FormData();
       formData.append("file", file);
-      fetch(`${API_BASE}/import/excel`, {
+      fetch(`${API_BASE}/import/data`, {
         method: "POST",
         body: formData,
       })
@@ -206,7 +210,7 @@ const App: React.FC = () => {
 
   // Handler cho "Thêm dữ liệu mẫu"
   const importSampleData = () => {
-    fetch(`${API_BASE}/import/excel?sample=true`, { method: "POST" })
+    fetch(`${API_BASE}/import/data?sample=true`, { method: "POST" })
       .then((res) => res.json())
       .then(() => {
         fetchStudents(searchTerm, facultyFilter, page, rowsPerPage);
@@ -307,12 +311,15 @@ const App: React.FC = () => {
           <Button
             variant="outlined"
             color="info"
-            onClick={handleImportExcelClick}
+            onClick={handleImportDataClick}
           >
-            Import Excel
+            Import Data
           </Button>
           <Button variant="outlined" color="secondary" onClick={exportExcel}>
             Export Excel
+          </Button>
+          <Button variant="outlined" color="secondary" onClick={exportCSV}>
+            Export CSV
           </Button>
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
@@ -337,7 +344,7 @@ const App: React.FC = () => {
         {/* File input ẩn */}
         <input
           type="file"
-          accept=".xlsx, .xls"
+          accept=".xlsx, .xls, .csv"
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleFileChange}
