@@ -61,6 +61,7 @@ student-management/
 │   ├── tsconfig.json   # TypeScript configuration
 │   ├── sample/         # Sample data file
 ├── screenshots/        # Screenshots of the application
+├── docs/               # Documentation files
 ├── eslint.config.js    # ESLint configuration
  operations
 │   index.html          # Main HTML file
