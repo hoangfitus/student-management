@@ -1,8 +1,8 @@
-# Student Management Web Application - Version 2.0
+# Student Management Web Application - Version 3.0
 
-This is a lightweight web application built with TypeScript, React, and SQLite for managing a list of students. Version 2.0 introduces significant enhancements over the previous version, including advanced category management, extended search capabilities, sample data import, logging mechanisms, and version display.
+This is a lightweight web application built with TypeScript, React, and SQLite for managing a list of students. Version 3.0 introduces significant enhancements over the previous version, including advanced category management, extended search capabilities, sample data import, logging mechanisms, and version display.
 
-## New Features in Version 2.0
+## New Features in Version 3.0
 
 - **Category Management:**
   - **Rename and Add New Categories:** Manage Faculty, Student Status, and Program via a dedicated modal.
@@ -16,6 +16,8 @@ This is a lightweight web application built with TypeScript, React, and SQLite f
   - Integrated logging using Winston for troubleshooting production issues and audit purposes. All logs are stored in the `logs/` folder.
 - **Version and Build Date Display:**
   - The application footer displays the current version and build date (auto-generated during build).
+- **Validation and Error Handling:**
+  - Enhanced validation and error handling for form inputs, with detailed error messages displayed to the user.
 
 ## Screenshots
 
@@ -42,13 +44,22 @@ student-management/
 │   ├── main.tsx        # Application entry point
 │   ├── types.d.ts      # Data types
 │   ├── vite-env.d.ts   # Vite environment variables
-├── server/
-│   ├── server.ts       # Node.js backend server
-│   ├── logger.ts       # Winston logger configuration
-│   ├── prebuild.ts     # Pre-build script to create version file
-├── db/                 # Folder containing the SQLite database file
-├── logs/               # Folder containing log files
-├── sample/             # Folder containing sample data for import
+├──
+├── backend/            # Backend Node.js server
+│   ├── prisma/         # Prisma schema and client
+│   ├── logs/           # Log files
+│   ├── src/
+│   │   ├── student     # Student controller and service
+│   │   ├── faculty     # Faculty controller and service
+│   │   ├── program     # Program controller and service
+│   │   ├── status      # Student status controller and service
+│   │   ├── main.ts    # Main server file
+│   ├── .env            # Environment variables
+│   ├── .env.example    # Example environment variables
+│   ├── .gitignore      # Git ignore file
+│   ├── package.json    # Project metadata and dependencies
+│   ├── tsconfig.json   # TypeScript configuration
+│   ├── sample/         # Sample data file
 ├── screenshots/        # Screenshots of the application
 ├── eslint.config.js    # ESLint configuration
  operations
@@ -76,6 +87,11 @@ student-management/
    ```bash
    pnpm install
    ```
+3. Install backend dependencies:
+   ```bash
+   cd backend
+   pnpm install
+   ```
 
 ## Running the Application
 
@@ -94,6 +110,7 @@ Access the app at `http://localhost:5173`
 Start the Node.js backend server:
 
 ```bash
+cd backend
 pnpm start
 ```
 
