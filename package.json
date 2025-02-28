@@ -1,13 +1,14 @@
 {
   "name": "student-management",
   "private": true,
-  "version": "2.0",
+  "version": "3.0",
   "type": "module",
   "scripts": {
     "start": "tsx server/server.ts",
     "dev": "vite",
-    "prebuild": "rm -rf dist && tsx server/prebuild.ts",
+    "prebuild": "rm -rf dist && tsx prebuild.ts",
     "build": "tsc -b && vite build",
+    "test": "jest --coverage",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -23,8 +24,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
-    "sqlite3": "^5.1.7",
-    "winston": "^3.17.0",
     "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },

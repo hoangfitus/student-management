@@ -1,0 +1,24 @@
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { FacultyService } from './faculty.service';
+import { CreateFacultyDto } from './dto/create-faculty.dto';
+import { UpdateFacultyDto } from './dto/update-faculty.dto';
+
+@Controller('faculty')
+export class FacultyController {
+  constructor(private readonly facultyService: FacultyService) {}
+
+  @Post()
+  create(@Body() createFacultyDto: CreateFacultyDto) {
+    return this.facultyService.create(createFacultyDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.facultyService.findAll();
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateFacultyDto: UpdateFacultyDto) {
+    return this.facultyService.update(+id, updateFacultyDto);
+  }
+}

@@ -22,7 +22,7 @@ import Footer from "./components/Footer";
 import CategoryModal, { CategoryItem } from "./components/CategoryModal";
 import { Student } from "./types";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = "http://localhost:3000";
 
 const App: React.FC = () => {
   // States cho sinh viên
@@ -51,21 +51,21 @@ const App: React.FC = () => {
 
   // Fetch danh mục (giả sử API trả về đối tượng có { id, name })
   const fetchFaculties = () => {
-    fetch(`${API_BASE}/faculties`)
+    fetch(`${API_BASE}/faculty`)
       .then((res) => res.json())
       .then((data) => setFaculties(data))
       .catch((err) => console.error(err));
   };
 
   const fetchStatuses = () => {
-    fetch(`${API_BASE}/student_statuses`)
+    fetch(`${API_BASE}/status`)
       .then((res) => res.json())
       .then((data) => setStatuses(data))
       .catch((err) => console.error(err));
   };
 
   const fetchPrograms = () => {
-    fetch(`${API_BASE}/programs`)
+    fetch(`${API_BASE}/program`)
       .then((res) => res.json())
       .then((data) => setPrograms(data))
       .catch((err) => console.error(err));
@@ -83,7 +83,7 @@ const App: React.FC = () => {
     page: number,
     rowsPerPage: number
   ) => {
-    let url = `${API_BASE}/students?search=${encodeURIComponent(
+    let url = `${API_BASE}/student?search=${encodeURIComponent(
       search
     )}&page=${page}&limit=${rowsPerPage}`;
     if (faculty) {
@@ -103,7 +103,7 @@ const App: React.FC = () => {
   }, [searchTerm, facultyFilter, page, rowsPerPage]);
 
   const addStudent = (student: Student) => {
-    fetch(`${API_BASE}/students`, {
+    fetch(`${API_BASE}/student`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(student),
@@ -117,8 +117,8 @@ const App: React.FC = () => {
   };
 
   const updateStudent = (student: Student) => {
-    fetch(`${API_BASE}/students/${student.mssv}`, {
-      method: "PUT",
+    fetch(`${API_BASE}/student/${student.mssv}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(student),
     })
@@ -133,7 +133,7 @@ const App: React.FC = () => {
 
   const deleteStudent = (mssv: string) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) {
-      fetch(`${API_BASE}/students/${mssv}`, { method: "DELETE" })
+      fetch(`${API_BASE}/student/${mssv}`, { method: "DELETE" })
         .then((res) => res.json())
         .then(() => {
           fetchStudents(searchTerm, facultyFilter, page, rowsPerPage);
@@ -168,11 +168,11 @@ const App: React.FC = () => {
   };
 
   const exportExcel = () => {
-    window.open(`${API_BASE}/export?type=excel`, "_blank");
+    window.open(`${API_BASE}/export/excel`, "_blank");
   };
 
   const exportCSV = () => {
-    window.open(`${API_BASE}/export?type=csv`, "_blank");
+    window.open(`${API_BASE}/export/csv`, "_blank");
   };
 
   const handleImportDataClick = () => {
@@ -182,8 +182,8 @@ const App: React.FC = () => {
   };
 
   // Xử lý chọn file Excel và CSV
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
       const allowedExtensions = [".xlsx", ".xls", ".csv"];
@@ -191,26 +191,26 @@ const App: React.FC = () => {
         .slice(file.name.lastIndexOf("."))
         .toLowerCase();
       if (!allowedExtensions.includes(fileExtension)) {
-        alert("Vui lòng chọn file .xlsx, .xls hoặc .csv");
+        alert("Please select an Excel (.xlsx, .xls) or CSV (.csv) file.");
         return;
       }
       const formData = new FormData();
       formData.append("file", file);
-      fetch(`${API_BASE}/import`, {
-        method: "POST",
-        body: formData,
-      })
+      // Choose endpoint based on file type
+      const endpoint =
+        fileExtension === ".csv"
+          ? `${API_BASE}/import/csv`
+          : `${API_BASE}/import/excel`;
+      fetch(endpoint, { method: "POST", body: formData })
         .then((res) => res.json())
-        .then(() => {
-          fetchStudents(searchTerm, facultyFilter, page, rowsPerPage);
-        })
+        .then(() => fetchStudents(searchTerm, facultyFilter, page, rowsPerPage))
         .catch((err) => console.error(err));
     }
   };
 
   // Handler cho "Thêm dữ liệu mẫu"
   const importSampleData = () => {
-    fetch(`${API_BASE}/import?sample=true`, { method: "POST" })
+    fetch(`${API_BASE}/import/excel?sample=true`, { method: "POST" })
       .then((res) => res.json())
       .then(() => {
         fetchStudents(searchTerm, facultyFilter, page, rowsPerPage);
@@ -232,13 +232,7 @@ const App: React.FC = () => {
 
   // Callback cho modal danh mục
   const handleAddCategory = (newValue: string) => {
-    const endpoint =
-      currentCatType === "faculty"
-        ? "/faculties"
-        : currentCatType === "status"
-        ? "/student_statuses"
-        : "/programs";
-    fetch(`${API_BASE}${endpoint}`, {
+    fetch(`${API_BASE}/${currentCatType}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newValue }),
@@ -253,14 +247,8 @@ const App: React.FC = () => {
   };
 
   const handleEditCategory = (id: number, newValue: string) => {
-    const endpoint =
-      currentCatType === "faculty"
-        ? "/faculties"
-        : currentCatType === "status"
-        ? "/student_statuses"
-        : "/programs";
-    fetch(`${API_BASE}${endpoint}/${id}`, {
-      method: "PUT",
+    fetch(`${API_BASE}/${currentCatType}/${id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newValue }),
     })
