@@ -1,0 +1,15 @@
+## Các khó khăn khi cài đặt test
+
+- Vì lúc đầu, code hết backend api trong 1 file duy nhất `server.ts` nên việc test khá khó khăn, không thể test được các hàm riêng lẻ.
+- Sau đó, cấu trúc lại các thư mục code theo đúng cấu trúc route, controller,... nhưng vẫn không thể test do vấn đề cấu hình Jest với Expressjs và sqlite.
+
+## Cách giải quyết
+
+- Chuyển sang dùng Nestjs để cấu trúc lại project, giúp việc test dễ dàng hơn nhờ có tích hợp sẵn với Jest.
+- Đồng thời sử dụng thêm Prisma để thao tác với database, giúp việc test dễ dàng hơn.
+
+## Đề xuất
+
+- Sử dụng Nestjs và Prisma để cấu trúc lại project, giúp việc cài đặt bộ test đơn giản hơn.
+- Sử dụng Jest để viết test cho project.
+- Sử dụng Github Actions để CI/CD tự động.
