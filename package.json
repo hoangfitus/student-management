@@ -7,7 +7,7 @@
     "start": "tsx server/server.ts",
     "dev": "vite",
     "prebuild": "rm -rf dist && tsx prebuild.ts",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && cd backend && nest build",
     "test": "jest --coverage",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -1,23 +1,53 @@
 # Student Management Web Application - Version 3.0
 
-This is a lightweight web application built with TypeScript, React, and SQLite for managing a list of students. Version 3.0 introduces significant enhancements over the previous version, including advanced category management, extended search capabilities, sample data import, logging mechanisms, and version display.
+This is a lightweight web application built with NestJS, Prisma, React, and SQLite for managing a list of students. Version 3.0 introduces stricter validation rules and configurable constraints to ensure data consistency and improve business logic enforcement.
 
 ## New Features in Version 3.0
 
-- **Category Management:**
-  - **Rename and Add New Categories:** Manage Faculty, Student Status, and Program via a dedicated modal.
-  - **Automatic Update:** When a category is renamed, all related student records update automatically via triggers to ensure data consistency.
-- **Extended Search:**
-  - Filter students by Faculty and search by MSSV or Name.
-- **Data Import/Export Enhancements:**
-  - **Excel Import/Export:** Improved handling for dates and phone numbers, with proper formatting (dates displayed as dd/mm/yyyy and phone numbers retaining leading zeros).
-  - **Sample Data Import:** Easily import sample student data from a provided sample file (`sample/sample.xlsx`) by clicking a dedicated button.
-- **Logging Mechanism:**
-  - Integrated logging using Winston for troubleshooting production issues and audit purposes. All logs are stored in the `logs/` folder.
-- **Version and Build Date Display:**
-  - The application footer displays the current version and build date (auto-generated during build).
-- **Validation and Error Handling:**
-  - Enhanced validation and error handling for form inputs, with detailed error messages displayed to the user.
+### 1. MSSV Uniqueness
+
+- **Requirement:**  
+  The student MSSV must be unique.
+- **Implementation:**  
+  When creating or updating a student, the system checks if the provided MSSV already exists. If so, it rejects the request.
+
+### 2. Configurable Email Domain Validation
+
+- **Requirement:**  
+  The student's email must belong to a specified domain (e.g., `@student.university.edu.vn`).
+- **Implementation:**  
+  The allowed email domain is configurable via environment variables.
+
+### 3. Configurable Phone Number Validation
+
+- **Requirement:**  
+  Phone numbers must be valid for the country (e.g., Vietnam).
+- **Implementation:**  
+  A regular expression validates the phone number in both local and international formats (e.g., `0[3|5|7|8|9]xxxxxxxx` or `+84[3|5|7|8|9]xxxxxxxx`).
+
+### 4. Student Status Transition Rules
+
+- **Requirement:**  
+  The student's status can only change following certain rules:
+  - If the current status is `"Đang học"`, it may change only to `"Bảo lưu"`, `"Tốt nghiệp"`, or `"Đình chỉ"`.
+  - If the current status is `"Đã tốt nghiệp"`, it cannot revert to `"Đang học"`.
+- **Implementation:**  
+  The update service enforces these rules when processing status updates.
+
+## Additional Enhancements
+
+- **Improved Data Import/Export:**
+  - Supports importing data from both Excel and CSV formats.
+  - Handles Excel serial dates (e.g., `37165.29201388889`) by converting them to proper DateTime values.
+  - Ensures Unicode text (e.g., Vietnamese characters) is correctly decoded.
+- **Prisma & NestJS Integration:**  
+  Uses Prisma as the ORM with SQLite as the database and leverages NestJS's modular architecture for improved maintainability and testability.
+- **Dynamic Configuration:**  
+  Environment variables (via the ConfigModule) allow dynamic configuration of allowed email domain and other validation parameters.
+- **Validation & Error Handling:**  
+  DTOs enforce strict validation rules for MSSV, email, and phone number formats.
+- **Global Validation:**  
+  The global `ValidationPipe` ensures that all incoming requests conform to the defined DTOs before reaching the controllers.
 
 ## Screenshots
 
@@ -44,8 +74,7 @@ student-management/
 │   ├── main.tsx        # Application entry point
 │   ├── types.d.ts      # Data types
 │   ├── vite-env.d.ts   # Vite environment variables
-├──
-├── backend/            # Backend Node.js server
+├── backend/
 │   ├── prisma/         # Prisma schema and client
 │   ├── logs/           # Log files
 │   ├── src/
@@ -53,7 +82,7 @@ student-management/
 │   │   ├── faculty     # Faculty controller and service
 │   │   ├── program     # Program controller and service
 │   │   ├── status      # Student status controller and service
-│   │   ├── main.ts    # Main server file
+│   │   ├── main.ts     # Main server file
 │   ├── .env            # Environment variables
 │   ├── .env.example    # Example environment variables
 │   ├── .gitignore      # Git ignore file
@@ -62,9 +91,8 @@ student-management/
 │   ├── sample/         # Sample data file
 ├── screenshots/        # Screenshots of the application
 ├── docs/               # Documentation files
-├── eslint.config.js    # ESLint configuration
- operations
-│   index.html          # Main HTML file
+├── eslint.config.js    # ESLint configuration operations
+├── index.html          # Main HTML file
 ├── package.json        # Project metadata and dependencies
 ├── tsconfig.app.json   # TypeScript configuration for the frontend
 ├── tsconfig.node.json  # TypeScript configuration for the backend
@@ -80,19 +108,25 @@ student-management/
 
 ## Installation
 
-1. Extract the source code to a folder and navigate to the project directory:
-   ```bash
-   cd student-management
-   ```
+1. Clone the repository and navigate to the project directory:
+
+```bash
+git clone
+cd student-management
+```
+
 2. Install dependencies using pnpm:
-   ```bash
-   pnpm install
-   ```
+
+```bash
+pnpm install
+```
+
 3. Install backend dependencies:
-   ```bash
-   cd backend
-   pnpm install
-   ```
+
+```bash
+cd backend
+pnpm install
+```
 
 ## Running the Application
 
@@ -106,16 +140,40 @@ pnpm dev
 
 Access the app at `http://localhost:5173`
 
-### Backend (SQLite Server)
+### Backend
+
+Add a `.env` file in the `backend/` folder with the following content:
+
+```plaintext
+ALLOWED_EMAIL_DOMAIN=your.email.domain
+```
+
+Run Prisma migrations and seed initial data:
+
+```bash
+cd backend
+pnpm dlx prisma migrate dev --name init
+pnpm seed
+```
 
 Start the Node.js backend server:
 
 ```bash
-cd backend
 pnpm start
 ```
 
-This will start the Node.js backend to manage database operations.
+This will start the Node.js backend to manage database operations.\
+
+## Testing
+
+### Backend Tests:
+
+Run unit and integration tests with:
+
+```bash
+cd backend
+pnpm test
+```
 
 ## Building for Production
 
@@ -145,11 +203,17 @@ All backend operations are logged using Winston. The log files are stored in the
 
 ## Usage Notes
 
-- **Database**:
-  The SQLite database file (db.sqlite) is automatically created in the db/ folder if it does not already exist.
+- **MSSV Uniqueness:**
+  Attempting to add or update a student with an existing MSSV will result in an error.
 
-- **Category Updates**:
-  When a category (Faculty, Student Status, or Program) is updated, related student records are automatically updated.
+- **Email Validation:**:
+  WOnly emails ending with the configured domain (default: @student.university.edu.vn) are accepted.
 
-- **Date and Phone Formatting**:
-  Student date of birth is returned in the dd/mm/yyyy format, and phone numbers retain any leading zeros.
+- **Phone Number Validation:**
+  Phone numbers must match the configured Vietnamese format.
+
+- **Student Status Rules:**
+  The student status must follow the specified transition rules.
+
+- **Global Validation:**
+  All incoming data is validated by a global validation pipe before being processed.

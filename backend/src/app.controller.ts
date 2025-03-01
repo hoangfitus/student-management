@@ -8,7 +8,7 @@ export class AppController {
 
   @Get('build')
   async getBuildInfo() {
-    const versionFilePath = path.join(__dirname, '..', '..', 'version.json');
+    const versionFilePath = path.join(process.cwd(), '..', 'version.json');
     try {
       const data = await fs.promises.readFile(versionFilePath, 'utf8');
       const versionData = JSON.parse(data);

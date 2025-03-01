@@ -6,9 +6,14 @@ import { ProgramModule } from './program/program.module';
 import { StatusModule } from './status/status.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { DataModule } from './data/data.module';
+import { ConfigModule } from '@nestjs/config';
+import { IsEmailDomainConstraint } from './validatos/is-email-domain';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     StudentModule,
     FacultyModule,
     ProgramModule,
@@ -17,6 +22,7 @@ import { DataModule } from './data/data.module';
     DataModule,
   ],
   controllers: [AppController],
-  providers: [Logger],
+  providers: [Logger, IsEmailDomainConstraint],
+  exports: [IsEmailDomainConstraint],
 })
 export class AppModule {}
