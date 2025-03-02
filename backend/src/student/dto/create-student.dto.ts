@@ -4,10 +4,8 @@ import {
   IsIn,
   IsEmail,
   Length,
-  IsDateString,
   Matches,
 } from 'class-validator';
-import { IsEmailDomain } from 'src/validatos/is-email-domain';
 
 export class CreateStudentDto {
   @IsNotEmpty()
@@ -19,7 +17,7 @@ export class CreateStudentDto {
   name: string;
 
   @IsNotEmpty()
-  @IsDateString()
+  @IsString()
   dob: string;
 
   @IsNotEmpty()
@@ -44,7 +42,6 @@ export class CreateStudentDto {
 
   @IsNotEmpty()
   @IsEmail()
-  @IsEmailDomain({ message: 'Email must belong to the configured domain' })
   email: string;
 
   @IsNotEmpty()

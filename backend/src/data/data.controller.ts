@@ -6,99 +6,57 @@ import {
   UploadedFile,
   Res,
   Query,
-  BadRequestException,
-  HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import { DataService } from './data.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { Response } from 'express';
 import * as fs from 'fs';
 import { join } from 'path';
+import { Student } from '@prisma/client';
 
 @Controller()
 export class DataController {
   constructor(private readonly dataService: DataService) {}
 
   @Post('import/csv')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          callback(null, `import-${Date.now()}-${file.originalname}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async importCSV(@UploadedFile() file: Express.Multer.File) {
-    return this.dataService.importCSV(file.path);
+    return this.dataService.importCSV(file);
   }
 
   @Post('import/excel')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          callback(null, `import-${Date.now()}-${file.originalname}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async importExcel(
     @UploadedFile() file: Express.Multer.File,
     @Query('sample') sample: string,
-  ) {
-    let filePath: string;
-
-    // If sample query parameter is "true", use sample file from disk
+  ): Promise<Student[]> {
     if (sample === 'true') {
-      filePath = join(process.cwd(), 'sample', 'sample.xlsx');
+      const sampleFilePath = join(process.cwd(), 'sample', 'sample.xlsx');
+      const sampleFileBuffer = fs.readFileSync(sampleFilePath);
+      return this.dataService.importExcel({
+        buffer: sampleFileBuffer,
+      } as Express.Multer.File);
     } else {
-      // Otherwise, use the uploaded file
-      if (!file) {
-        throw new BadRequestException('No file uploaded');
-      }
-      filePath = file.path;
+      return this.dataService.importExcel(file);
     }
-
-    // Call the service to process the file at filePath
-    return this.dataService.importExcel(filePath);
   }
 
   @Get('export/csv')
   async exportCSV(@Res() res: Response) {
-    const filePath = join(process.cwd(), 'exports', 'students.csv');
-    try {
-      await this.dataService.exportCSV(filePath);
-      if (!fs.existsSync(filePath)) {
-        throw new Error('Export file not found');
-      }
-      return res.download(filePath);
-    } catch (error) {
-      throw new HttpException(
-        `Export CSV failed: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=students.csv');
+    const csvStream = await this.dataService.generateCSVData();
+    csvStream.pipe(res);
   }
 
   @Get('export/excel')
   async exportExcel(@Res() res: Response) {
-    const filePath = join(process.cwd(), 'exports', 'students.xlsx');
-    try {
-      await this.dataService.exportExcel(filePath);
-      if (!fs.existsSync(filePath)) {
-        throw new Error('Export file not found');
-      }
-      return res.download(filePath);
-    } catch (error) {
-      throw new HttpException(
-        `Export Excel failed: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
+    const excelBuffer = await this.dataService.generateExcelBuffer();
+    res.send(excelBuffer);
   }
 }

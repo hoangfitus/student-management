@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -10,45 +10,55 @@ interface StudentFormProps {
   faculties: string[];
   programs: string[];
   statuses: string[];
+  allowedDomain: string;
   onSubmit: (data: Student) => void;
   onCancel?: () => void;
 }
 
 const genders = ["Nam", "Nữ", "Khác"];
 
-const schema = yup
-  .object({
-    mssv: yup.string().required("MSSV là bắt buộc"),
-    name: yup.string().required("Họ tên là bắt buộc"),
-    dob: yup.string().required("Ngày sinh là bắt buộc"),
-    gender: yup.string().required("Giới tính là bắt buộc"),
-    faculty: yup.string().required("Khoa là bắt buộc"),
-    course: yup.string().required("Khóa là bắt buộc"),
-    program: yup.string().required("Chương trình là bắt buộc"),
-    address: yup.string().required("Địa chỉ là bắt buộc"),
-    email: yup
-      .string()
-      .email("Email không hợp lệ")
-      .required("Email là bắt buộc"),
-    phone: yup
-      .string()
-      .matches(
-        /^0\d{9}$/,
-        "Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số."
-      )
-      .required("Số điện thoại là bắt buộc"),
-    status: yup.string().required("Tình trạng sinh viên là bắt buộc"),
-  })
-  .required();
+const createSchema = (allowedDomain: string) => {
+  const domainRegex = new RegExp(
+    `^[a-zA-Z0-9._%+-]+@${allowedDomain.replace(/\./g, "\\.")}$`
+  );
+  return yup
+    .object({
+      mssv: yup.string().required("MSSV là bắt buộc"),
+      name: yup.string().required("Họ tên là bắt buộc"),
+      dob: yup.string().required("Ngày sinh là bắt buộc"),
+      gender: yup.string().required("Giới tính là bắt buộc"),
+      faculty: yup.string().required("Khoa là bắt buộc"),
+      course: yup.string().required("Khóa là bắt buộc"),
+      program: yup.string().required("Chương trình là bắt buộc"),
+      address: yup.string().required("Địa chỉ là bắt buộc"),
+      email: yup
+        .string()
+        .email("Email không hợp lệ")
+        .matches(domainRegex, `Email phải có domain là ${allowedDomain}`)
+        .required("Email là bắt buộc"),
+      phone: yup
+        .string()
+        .matches(
+          /^0\d{9}$/,
+          "Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số."
+        )
+        .required("Số điện thoại là bắt buộc"),
+      status: yup.string().required("Tình trạng sinh viên là bắt buộc"),
+    })
+    .required();
+};
 
 const StudentForm: React.FC<StudentFormProps> = ({
   defaultValues,
   faculties,
   programs,
   statuses,
+  allowedDomain,
   onSubmit,
   onCancel,
 }) => {
+  const schema = useMemo(() => createSchema(allowedDomain), [allowedDomain]);
+
   const {
     register,
     handleSubmit,
@@ -81,7 +91,6 @@ const StudentForm: React.FC<StudentFormProps> = ({
     onSubmit(data);
     reset();
   };
-
   return (
     <Box component="form" onSubmit={handleSubmit(submitHandler)} sx={{ p: 2 }}>
       <Grid2 container spacing={2}>
@@ -142,9 +151,9 @@ const StudentForm: React.FC<StudentFormProps> = ({
             error={!!errors.faculty}
             helperText={errors.faculty?.message}
           >
-            {faculties.map((falculty) => (
-              <MenuItem key={falculty} value={falculty}>
-                {falculty}
+            {faculties.map((faculty) => (
+              <MenuItem key={faculty} value={faculty}>
+                {faculty}
               </MenuItem>
             ))}
           </TextField>
@@ -209,7 +218,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             error={!!errors.phone}
             helperText={errors.phone?.message}
           />
-        </Grid2>{" "}
+        </Grid2>
         <Grid2 size={{ xs: 12 }}>
           <TextField
             label="Địa chỉ"

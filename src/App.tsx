@@ -46,6 +46,19 @@ const App: React.FC = () => {
     "faculty" | "status" | "program"
   >("faculty");
 
+  const [allowedDomain, setAllowedDomain] = useState("gmail.com");
+
+  // --- New handler for configuring allowed email domain ---
+  const handleConfigureAllowedDomain = () => {
+    const newDomain = prompt(
+      `Nhập domain email cho phép, hiện tại: ${allowedDomain}`,
+      allowedDomain
+    );
+    if (newDomain && newDomain.trim()) {
+      setAllowedDomain(newDomain.trim());
+    }
+  };
+
   // Reference cho input file Excel ẩn
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -324,9 +337,15 @@ const App: React.FC = () => {
             variant="contained"
             color="secondary"
             onClick={importSampleData}
-            sx={{ mr: 2 }}
           >
             Thêm dữ liệu mẫu
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleConfigureAllowedDomain}
+          >
+            Cấu hình Email Domain
           </Button>
         </Box>
         {/* File input ẩn */}
@@ -389,6 +408,7 @@ const App: React.FC = () => {
             faculties={faculties.map((f) => f.name)}
             programs={programs.map((p) => p.name)}
             statuses={statuses.map((s) => s.name)}
+            allowedDomain={allowedDomain}
             onSubmit={editingStudent ? updateStudent : addStudent}
             onCancel={() => setModalOpen(false)}
           />

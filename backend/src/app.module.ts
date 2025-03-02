@@ -7,7 +7,6 @@ import { StatusModule } from './status/status.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { DataModule } from './data/data.module';
 import { ConfigModule } from '@nestjs/config';
-import { IsEmailDomainConstraint } from './validatos/is-email-domain';
 
 @Module({
   imports: [
@@ -22,7 +21,6 @@ import { IsEmailDomainConstraint } from './validatos/is-email-domain';
     DataModule,
   ],
   controllers: [AppController],
-  providers: [Logger, IsEmailDomainConstraint],
-  exports: [IsEmailDomainConstraint],
+  providers: [Logger],
 })
 export class AppModule {}
