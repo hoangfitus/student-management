@@ -130,4 +130,7 @@ export const {
   useUpdateFacultyMutation,
   useUpdateProgramMutation,
   useUpdateStatusMutation,
+  useRemoveFacultyMutation,
+  useRemoveProgramMutation,
+  useRemoveStatusMutation,
 } = categoryApi;

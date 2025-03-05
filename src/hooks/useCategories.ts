@@ -8,6 +8,9 @@ import {
   useUpdateFacultyMutation,
   useUpdateProgramMutation,
   useUpdateStatusMutation,
+  useRemoveFacultyMutation,
+  useRemoveProgramMutation,
+  useRemoveStatusMutation,
 } from "@app/services/category";
 
 export const useCategories = () => {
@@ -21,6 +24,9 @@ export const useCategories = () => {
   const [updateFaculty] = useUpdateFacultyMutation();
   const [updateProgram] = useUpdateProgramMutation();
   const [updateStatus] = useUpdateStatusMutation();
+  const [removeFaculty] = useRemoveFacultyMutation();
+  const [removeProgram] = useRemoveProgramMutation();
+  const [removeStatus] = useRemoveStatusMutation();
 
   const handleAddCategory = async (type: string, name: string) => {
     switch (type) {
@@ -50,11 +56,26 @@ export const useCategories = () => {
     }
   };
 
+  const handleDeleteCategory = async (type: string, id: number) => {
+    switch (type) {
+      case "faculty":
+        await removeFaculty(id);
+        break;
+      case "program":
+        await removeProgram(id);
+        break;
+      case "status":
+        await removeStatus(id);
+        break;
+    }
+  };
+
   return {
     facultiesData,
     statusesData,
     programsData,
     handleAddCategory,
     handleEditCategory,
+    handleDeleteCategory,
   };
 };

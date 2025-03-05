@@ -14,6 +14,7 @@ import {
   Box,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import type { Category } from "../types.d";
 
 interface CategoryModalProps {
@@ -23,6 +24,7 @@ interface CategoryModalProps {
   items?: Category[];
   onAdd: (newValue: string) => Promise<void> | void;
   onEdit: (id: number, newValue: string) => Promise<void> | void;
+  onDelete: (id: number) => Promise<void> | void;
 }
 
 export const CategoryModal: React.FC<CategoryModalProps> = ({
@@ -32,6 +34,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   items,
   onAdd,
   onEdit,
+  onDelete,
 }) => {
   const [newValue, setNewValue] = useState("");
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
@@ -115,12 +118,21 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
               <ListItem
                 key={item.id}
                 secondaryAction={
-                  <IconButton
-                    edge="end"
-                    onClick={() => startEditing(item.id, item.name)}
-                  >
-                    <EditIcon />
-                  </IconButton>
+                  <Box display="flex" gap={1}>
+                    <IconButton
+                      edge="end"
+                      onClick={() => startEditing(item.id, item.name)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => onDelete(item.id)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
                 }
               >
                 <ListItemText primary={item.name} />

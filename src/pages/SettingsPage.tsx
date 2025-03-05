@@ -91,6 +91,7 @@ export const SettingsPage: React.FC = () => {
     programsData,
     handleAddCategory,
     handleEditCategory,
+    handleDeleteCategory,
   } = useCategories();
 
   const [upload] = useUploadMutation();
@@ -302,6 +303,7 @@ export const SettingsPage: React.FC = () => {
         onEdit={(id, newValue) =>
           handleEditCategory(currentCatType, id, newValue)
         }
+        onDelete={(id) => handleDeleteCategory(currentCatType, id)}
       />
     </Container>
   );
