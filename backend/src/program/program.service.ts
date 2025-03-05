@@ -47,4 +47,10 @@ export class ProgramService {
       program,
     };
   }
+
+  async remove(id: number): Promise<{ message: string }> {
+    await this.prisma.program.delete({ where: { id } });
+    this.logger.log(`Program deleted: ${id}`);
+    return { message: 'Program deleted successfully' };
+  }
 }

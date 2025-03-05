@@ -47,4 +47,10 @@ export class StatusService {
       status,
     };
   }
+
+  async remove(id: number): Promise<{ message: string }> {
+    await this.prisma.studentStatus.delete({ where: { id } });
+    this.logger.log(`Status deleted: ${id}`);
+    return { message: 'Status deleted successfully' };
+  }
 }

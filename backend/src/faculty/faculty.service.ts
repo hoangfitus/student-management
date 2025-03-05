@@ -49,4 +49,10 @@ export class FacultyService {
       faculty,
     };
   }
+
+  async remove(id: number): Promise<{ message: string }> {
+    await this.prisma.faculty.delete({ where: { id } });
+    this.logger.log(`Faculty deleted: ${id}`);
+    return { message: 'Faculty deleted successfully' };
+  }
 }
