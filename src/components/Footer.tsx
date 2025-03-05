@@ -1,12 +1,12 @@
 import React from "react";
 import { Typography, Box } from "@mui/material";
-import { useVersionInfo } from "../hooks/useVersionInfo";
+import { useVersionInfo } from "@app/hooks";
 
-const Footer: React.FC = () => {
+export const Footer: React.FC = () => {
   const versionInfo = useVersionInfo();
 
   return (
-    <Box mt={4} mb={2}>
+    <Box mt={4} mb={2} sx={{ textAlign: "center" }}>
       {versionInfo ? (
         <Typography variant="caption" color="textSecondary">
           Version: {versionInfo.version} | Build Date:{" "}
@@ -20,5 +20,3 @@ const Footer: React.FC = () => {
     </Box>
   );
 };
-
-export default Footer;

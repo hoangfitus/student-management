@@ -1,4 +1,4 @@
-export interface Student {
+export type Student = {
   mssv: string;
   name: string;
   dob: string;
@@ -10,4 +10,15 @@ export interface Student {
   email: string;
   phone: string;
   status: string;
-}
+};
+
+export type Category = {
+  id: number;
+  name: string;
+};
+
+export type ConfigItem = {
+  id: number;
+  name: string;
+  value: string;
+};

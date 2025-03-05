@@ -3,13 +3,13 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { TextField, Button, Grid2, MenuItem, Box } from "@mui/material";
-import { Student } from "../types";
+import type { Student } from "@app/types";
 
-interface StudentFormProps {
+interface AddStudentFormProps {
   defaultValues?: Student;
-  faculties: string[];
-  programs: string[];
-  statuses: string[];
+  faculties?: string[];
+  programs?: string[];
+  statuses?: string[];
   allowedDomain: string;
   onSubmit: (data: Student) => void;
   onCancel?: () => void;
@@ -48,7 +48,7 @@ const createSchema = (allowedDomain: string) => {
     .required();
 };
 
-const StudentForm: React.FC<StudentFormProps> = ({
+export const AddStudentForm: React.FC<AddStudentFormProps> = ({
   defaultValues,
   faculties,
   programs,
@@ -151,7 +151,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             error={!!errors.faculty}
             helperText={errors.faculty?.message}
           >
-            {faculties.map((faculty) => (
+            {faculties?.map((faculty) => (
               <MenuItem key={faculty} value={faculty}>
                 {faculty}
               </MenuItem>
@@ -177,7 +177,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             error={!!errors.program}
             helperText={errors.program?.message}
           >
-            {programs.map((program) => (
+            {programs?.map((program) => (
               <MenuItem key={program} value={program}>
                 {program}
               </MenuItem>
@@ -194,7 +194,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             error={!!errors.status}
             helperText={errors.status?.message}
           >
-            {statuses.map((status) => (
+            {statuses?.map((status) => (
               <MenuItem key={status} value={status}>
                 {status}
               </MenuItem>
@@ -258,5 +258,3 @@ const StudentForm: React.FC<StudentFormProps> = ({
     </Box>
   );
 };
-
-export default StudentForm;

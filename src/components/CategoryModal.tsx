@@ -14,22 +14,18 @@ import {
   Box,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-
-export interface CategoryItem {
-  id: number;
-  name: string;
-}
+import type { Category } from "../types.d";
 
 interface CategoryModalProps {
   open: boolean;
   onClose: () => void;
   title: string; // Ví dụ: "Khoa", "Tình trạng sinh viên", "Chương trình đào tạo"
-  items: CategoryItem[];
+  items?: Category[];
   onAdd: (newValue: string) => Promise<void> | void;
   onEdit: (id: number, newValue: string) => Promise<void> | void;
 }
 
-const CategoryModal: React.FC<CategoryModalProps> = ({
+export const CategoryModal: React.FC<CategoryModalProps> = ({
   open,
   onClose,
   title,
@@ -98,7 +94,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
         </Box>
         {/* Danh sách các mục */}
         <List>
-          {items.map((item) =>
+          {items?.map((item) =>
             editingItemId === item.id ? (
               <ListItem key={item.id}>
                 <Box sx={{ width: "100%" }} display={"flex"}>
@@ -141,5 +137,3 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
     </Dialog>
   );
 };
-
-export default CategoryModal;
