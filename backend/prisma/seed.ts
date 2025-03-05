@@ -20,7 +20,14 @@ async function main() {
   }
 
   // List of student statuses
-  const statuses = ['Đang học', 'Đã tốt nghiệp', 'Đã thôi học', 'Tạm dừng học'];
+  const statuses = [
+    'Đang theo học',
+    'Đã hoàn thành chương trình, chờ xét tốt nghiệp',
+    'Đã tốt nghiệp',
+    'Bảo lưu',
+    'Đình chỉ học tập',
+    'Tình trạng khác',
+  ];
 
   for (const name of statuses) {
     await prisma.studentStatus.upsert({
@@ -30,7 +37,7 @@ async function main() {
     });
   }
 
-  const programs = ['Đại trà', 'Chất lượng cao', 'Việt Nhật', 'Việt Hàn'];
+  const programs = ['Cử nhân', 'Kỹ sư', 'Thạc sĩ', 'Tiến sĩ'];
 
   for (const name of programs) {
     await prisma.program.upsert({

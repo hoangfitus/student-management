@@ -9,22 +9,23 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Student {
-  mssv    String @id
-  name    String
-  dob     String
-  gender  String
-  faculty String
-  course  String
-  program String
-  address String
-  email   String @unique
-  phone   String @unique
-  status  String
+  mssv      String   @id
+  name      String
+  dob       String
+  gender    String
+  faculty   String
+  course    String
+  program   String
+  address   String
+  email     String   @unique
+  phone     String   @unique
+  status    String
+  createdAt DateTime @default(now())
 }
 
 model Faculty {
@@ -40,4 +41,10 @@ model StudentStatus {
 model Program {
   id   Int    @id @default(autoincrement())
   name String @unique
+}
+
+model Config {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  value String
 }
