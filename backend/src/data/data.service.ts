@@ -177,4 +177,141 @@ export class DataService {
       );
     }
   }
+
+  private generateCertificateContent(
+    student: Student,
+    school: {
+      name: string;
+      address: string;
+      phone: string;
+      email: string;
+    },
+    reason: string,
+    from: Date,
+    to: Date,
+  ): string {
+    return `
+### **GIẤY XÁC NHẬN TÌNH TRẠNG SINH VIÊN**  
+
+Trường ${school.name} xác nhận:  
+
+**1. Thông tin sinh viên:**  
+- **Họ và tên:** ${student.name}  
+- **Mã số sinh viên:** ${student.mssv}  
+- **Ngày sinh:** ${student.dob}  
+- **Giới tính:** ${student.gender}  
+- **Khoa:** ${student.faculty}  
+- **Chương trình đào tạo:** ${student.program}  
+- **Khóa:** K${student.course}  
+
+**2. Tình trạng sinh viên hiện tại:** 
+- ${student.status}
+
+**3. Mục đích xác nhận:**  
+- ${reason}
+
+**4. Thời gian cấp giấy:**  
+- Giấy xác nhận có hiệu lực đến ngày: ${to.toLocaleDateString('vi-VN')}
+
+📍 **Xác nhận của Trường Đại học ${school.name}**  
+
+📅 Ngày cấp: ${from.toLocaleDateString('vi-VN')}  
+
+🖋 **Trưởng Phòng Đào Tạo**  
+(Ký, ghi rõ họ tên, đóng dấu)
+`;
+  }
+
+  async generateCertificate(
+    id: string,
+    reason: string,
+  ): Promise<{
+    school: {
+      name: string;
+      address: string;
+      phone: string;
+      email: string;
+    };
+    from: Date;
+    to: Date;
+    content: string;
+  }> {
+    try {
+      const student = await this.prisma.student.findUnique({
+        where: { mssv: id },
+      });
+      if (!student) {
+        throw new BadRequestException('Student not found');
+      }
+
+      const schoolName = await this.prisma.config.findUnique({
+        where: { name: 'school_name' },
+      });
+      const schoolAddress = await this.prisma.config.findUnique({
+        where: { name: 'school_address' },
+      });
+      const schoolPhone = await this.prisma.config.findUnique({
+        where: { name: 'school_phone' },
+      });
+      const schoolEmail = await this.prisma.config.findUnique({
+        where: { name: 'school_email' },
+      });
+
+      if (!schoolName || !schoolAddress || !schoolPhone || !schoolEmail) {
+        throw new BadRequestException('School information not found');
+      }
+
+      const from = new Date();
+
+      if (!reason) {
+        throw new BadRequestException('Reason is required');
+      }
+
+      let to: Date;
+      if (reason === 'Xác nhận đang học để vay vốn ngân hàng') {
+        // Hiệu lực 6 tháng cho vay vốn ngân hàng
+        to = new Date(from.getTime() + 180 * 24 * 60 * 60 * 1000);
+      } else if (reason === 'Xác nhận làm thủ tục tạm hoãn nghĩa vụ quân sự') {
+        // Hiệu lực 12 tháng cho hoãn nghĩa vụ quân sự
+        to = new Date(from.getTime() + 365 * 24 * 60 * 60 * 1000);
+      } else if (reason === 'Xác nhận làm hồ sơ xin việc / thực tập') {
+        // Hiệu lực 3 tháng cho xin việc/thực tập
+        to = new Date(from.getTime() + 90 * 24 * 60 * 60 * 1000);
+      } else {
+        // Mặc định 1 tháng cho các trường hợp khác
+        to = new Date(from.getTime() + 30 * 24 * 60 * 60 * 1000);
+      }
+
+      const school = {
+        name: schoolName.value,
+        address: schoolAddress.value,
+        phone: schoolPhone.value,
+        email: schoolEmail.value,
+      };
+      const content = this.generateCertificateContent(
+        student,
+        school,
+        reason,
+        from,
+        to,
+      );
+      this.logger.log(
+        `Generating certificate for ${student.name} with reason ${reason}`,
+      );
+      return {
+        school,
+        from,
+        to,
+        content,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error generating certificate: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Error generating certificate: ${error.message}`,
+      );
+    }
+  }
 }

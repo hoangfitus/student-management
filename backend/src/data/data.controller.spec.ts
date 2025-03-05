@@ -2,21 +2,32 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DataController } from './data.controller';
 import { DataService } from './data.service';
 import { Response } from 'express';
-import * as xlsx from 'xlsx';
-import { join } from 'path';
 import * as fs from 'fs';
+import { join } from 'path';
+import { Student } from '@prisma/client';
 
 describe('DataController', () => {
   let controller: DataController;
   let service: DataService;
 
-  // Helper to create a fake response object
-  const mockResponse = (): Response => {
-    const res: Partial<Response> = {
+  const mockResponse = (): Response =>
+    ({
       setHeader: jest.fn(),
       send: jest.fn(),
-    };
-    return res as Response;
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    }) as unknown as Response;
+
+  const mockCertificateData = {
+    school: {
+      name: 'Test School',
+      address: 'Test School Address',
+      phone: '0987654321',
+      email: 'school@example.com',
+    },
+    from: new Date(),
+    to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    content: '### Certificate Content',
   };
 
   beforeEach(async () => {
@@ -26,10 +37,11 @@ describe('DataController', () => {
         {
           provide: DataService,
           useValue: {
-            generateCSVData: jest.fn(),
-            generateExcelBuffer: jest.fn(),
             importCSV: jest.fn(),
             importExcel: jest.fn(),
+            generateCSVData: jest.fn(),
+            generateExcelBuffer: jest.fn(),
+            generateCertificate: jest.fn(),
           },
         },
       ],
@@ -39,166 +51,77 @@ describe('DataController', () => {
     service = module.get<DataService>(DataService);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  describe('importCSV', () => {
-    it('should call dataService.importCSV and return its result', async () => {
-      // Arrange: Create a CSV string with headers and one row
-      const studentCSV = `mssv,name,dob,gender,faculty,course,program,address,email,phone,status
-20000001,Test Student,2000-01-15,Nam,Test Faculty,2020,Test Program,Test Address,test@example.com,0123456789,Active`;
-      const fakeFile = {
-        originalname: 'students.csv',
-        buffer: Buffer.from(studentCSV),
-      } as Express.Multer.File;
+  describe('import', () => {
+    it('should call dataService.importCSV when type is csv', async () => {
+      const file = { buffer: Buffer.from('test') } as Express.Multer.File;
+      const mockResult = [{ id: 1 }];
+      jest.spyOn(service, 'importCSV').mockResolvedValue(mockResult as any);
 
-      // Create a fake student object that the service will return
-      const fakeStudent = {
-        mssv: '20000001',
-        name: 'Test Student',
-        dob: '2000-01-15',
-        gender: 'Nam',
-        faculty: 'Test Faculty',
-        course: '2020',
-        program: 'Test Program',
-        address: 'Test Address',
-        email: 'test@example.com',
-        phone: '0123456789',
-        status: 'Active',
-      };
+      const result = await controller.import(file, 'csv', '');
 
-      // Stub the service.importCSV method to resolve with our fake student wrapped in an array
-      (service.importCSV as jest.Mock).mockResolvedValue([fakeStudent]);
-
-      // Act: Call the controller method
-      const result = await controller.importCSV(fakeFile);
-
-      // Assert: Check that service.importCSV was called with the correct file and that the result is returned.
-      expect(service.importCSV).toHaveBeenCalledWith(fakeFile);
-      expect(result).toEqual([fakeStudent]);
-    });
-  });
-
-  describe('importExcel', () => {
-    it('should call dataService.importExcel with the uploaded file when sample query is not true', async () => {
-      // Arrange: Create sample data and an Excel buffer using xlsx
-      const sampleData = [
-        {
-          mssv: '20000001',
-          name: 'Test Student',
-          dob: '2000-01-15',
-          gender: 'Nam',
-          faculty: 'Test Faculty',
-          course: '2020',
-          program: 'Test Program',
-          address: 'Test Address',
-          email: 'test@example.com',
-          phone: '0123456789',
-          status: 'Active',
-        },
-      ];
-      const worksheet = xlsx.utils.json_to_sheet(sampleData);
-      const workbook = xlsx.utils.book_new();
-      xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-      const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-      // Create a fake file object
-      const fakeFile = {
-        originalname: 'students.xlsx',
-        buffer,
-      } as Express.Multer.File;
-
-      // Stub the service.importExcel method to resolve with the sample data
-      (service.importExcel as jest.Mock).mockResolvedValue(sampleData);
-
-      // Act
-      const result = await controller.importExcel(fakeFile, '');
-
-      // Assert: Ensure the service method was called with the uploaded file
-      expect(service.importExcel).toHaveBeenCalledWith(fakeFile);
-      expect(result).toEqual(sampleData);
+      expect(service.importCSV).toHaveBeenCalledWith(file);
+      expect(result).toBe(mockResult);
     });
 
-    it('should load the sample file and call dataService.importExcel when sample query equals "true"', async () => {
-      // Arrange: Create sample data
-      const sampleData = [
-        {
-          mssv: '20000001',
-          name: 'Test Student',
-          dob: '2000-01-15',
-          gender: 'Nam',
-          faculty: 'Test Faculty',
-          course: '2020',
-          program: 'Test Program',
-          address: 'Test Address',
-          email: 'test@example.com',
-          phone: '0123456789',
-          status: 'Active',
-        },
-      ];
+    it('should call dataService.importExcel when type is excel', async () => {
+      const file = { buffer: Buffer.from('test') } as Express.Multer.File;
+      const mockResult = [{ id: 1 }];
+      jest.spyOn(service, 'importExcel').mockResolvedValue(mockResult as any);
 
-      // Stub the service.importExcel method to resolve with sampleData
-      (service.importExcel as jest.Mock).mockResolvedValue(sampleData);
+      const result = await controller.import(file, 'excel', 'false');
 
-      // Create a fake sample buffer to simulate reading from disk
-      const fakeSampleBuffer = Buffer.from('fake sample excel data');
+      expect(service.importExcel).toHaveBeenCalledWith(file);
+      expect(result).toBe(mockResult);
+    });
 
-      // Spy on fs.readFileSync to return our fake sample buffer
-      const readFileSyncSpy = jest
-        .spyOn(fs, 'readFileSync')
-        .mockReturnValue(fakeSampleBuffer);
+    it('should use sample file when sample is true', async () => {
+      const mockResult = [{ id: 1 }];
+      const sampleBuffer = Buffer.from('sample');
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(sampleBuffer);
+      jest.spyOn(service, 'importExcel').mockResolvedValue(mockResult as any);
 
-      // Act: Call the controller with sample query equals "true"
-      const result = await controller.importExcel(
-        {} as Express.Multer.File,
-        'true',
+      const file = {} as Express.Multer.File;
+      const result = await controller.import(file, 'excel', 'true');
+
+      expect(fs.readFileSync).toHaveBeenCalledWith(
+        join(process.cwd(), 'sample', 'sample.xlsx'),
       );
-
-      // Assert: Verify that fs.readFileSync was called with the expected sample file path
-      const expectedPath = join(process.cwd(), 'sample', 'sample.xlsx');
-      expect(readFileSyncSpy).toHaveBeenCalledWith(expectedPath);
-      // The controller should call service.importExcel with a file object containing the sample buffer
-      expect(service.importExcel).toHaveBeenCalledWith({
-        buffer: fakeSampleBuffer,
-      } as Express.Multer.File);
-      expect(result).toEqual(sampleData);
-
-      readFileSyncSpy.mockRestore();
+      expect(service.importExcel).toHaveBeenCalledWith(
+        expect.objectContaining({ buffer: sampleBuffer }),
+      );
+      expect(result).toBe(mockResult);
     });
   });
 
-  describe('exportCSV', () => {
-    it('should set headers and pipe CSV stream to response', async () => {
-      // Arrange
+  describe('export', () => {
+    it('should export CSV file', async () => {
       const res = mockResponse();
-      const fakeCsvStream = { pipe: jest.fn() };
-      (service.generateCSVData as jest.Mock).mockResolvedValue(fakeCsvStream);
+      const mockCsvStream = { pipe: jest.fn() };
+      jest
+        .spyOn(service, 'generateCSVData')
+        .mockResolvedValue(mockCsvStream as any);
 
-      // Act
-      await controller.exportCSV(res);
+      await controller.export(res, 'csv');
 
-      // Assert
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
       expect(res.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         'attachment; filename=students.csv',
       );
-      expect(fakeCsvStream.pipe).toHaveBeenCalledWith(res);
+      expect(mockCsvStream.pipe).toHaveBeenCalledWith(res);
     });
-  });
 
-  describe('exportExcel', () => {
-    it('should set headers and send excel buffer to response', async () => {
-      // Arrange
+    it('should export Excel file', async () => {
       const res = mockResponse();
-      const fakeBuffer = Buffer.from('fake excel buffer');
-      (service.generateExcelBuffer as jest.Mock).mockResolvedValue(fakeBuffer);
+      const mockBuffer = Buffer.from('test');
+      jest.spyOn(service, 'generateExcelBuffer').mockResolvedValue(mockBuffer);
 
-      // Act
-      await controller.exportExcel(res);
+      await controller.export(res, 'excel');
 
-      // Assert
       expect(res.setHeader).toHaveBeenCalledWith(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -207,7 +130,50 @@ describe('DataController', () => {
         'Content-Disposition',
         'attachment; filename=students.xlsx',
       );
-      expect(res.send).toHaveBeenCalledWith(fakeBuffer);
+      expect(res.send).toHaveBeenCalledWith(mockBuffer);
+    });
+  });
+
+  describe('exportCertificate', () => {
+    beforeEach(() => {
+      jest
+        .spyOn(service, 'generateCertificate')
+        .mockResolvedValue(mockCertificateData);
+    });
+
+    it('should export certificate as markdown', async () => {
+      const res = mockResponse();
+      const id = '12345';
+      const reason = 'test reason';
+
+      await controller.exportCertificate(res, id, 'md', reason);
+
+      expect(service.generateCertificate).toHaveBeenCalledWith(id, reason);
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/markdown',
+      );
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        'attachment; filename=certificate.md',
+      );
+      expect(res.send).toHaveBeenCalledWith(mockCertificateData.content);
+    });
+
+    it('should return certificate data for PDF generation', async () => {
+      const res = mockResponse();
+      const id = '12345';
+      const reason = 'test reason';
+
+      await controller.exportCertificate(res, id, 'pdf', reason);
+
+      expect(service.generateCertificate).toHaveBeenCalledWith(id, reason);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        school: mockCertificateData.school,
+        from: mockCertificateData.from.toLocaleDateString('vi-VN'),
+        to: mockCertificateData.to.toLocaleDateString('vi-VN'),
+      });
     });
   });
 });
