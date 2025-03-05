@@ -41,6 +41,7 @@ describe('StudentController', () => {
             email: 'test@example.com',
             phone: '0123456789',
             status: 'Đang học',
+            createdAt: new Date(),
           },
         ],
       };
@@ -65,6 +66,7 @@ describe('StudentController', () => {
         email: 'new@example.com',
         phone: '0123456789',
         status: 'Đang học',
+        createdAt: new Date(),
       };
       const result = {
         message: 'Student created successfully',
@@ -90,6 +92,7 @@ describe('StudentController', () => {
         email: 'updated@example.com',
         phone: '0123456789',
         status: 'Đang học',
+        createdAt: new Date(),
       };
       const result = {
         message: 'Student updated successfully',
