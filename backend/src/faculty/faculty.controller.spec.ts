@@ -8,6 +8,7 @@ describe('FacultyController', () => {
     findAll: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    remove: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -70,6 +71,15 @@ describe('FacultyController', () => {
       mockFacultyService.update.mockResolvedValue(result);
 
       expect(await controller.update('1', dto)).toEqual(result);
+    });
+  });
+
+  describe('remove', () => {
+    it('should remove a faculty', async () => {
+      const result = { message: 'Faculty deleted successfully' };
+      mockFacultyService.remove.mockResolvedValue(result);
+
+      expect(await controller.remove('1')).toEqual(result);
     });
   });
 });

@@ -73,4 +73,15 @@ describe('ProgramService', () => {
       expect(await service.update(1, dto)).toEqual(result);
     });
   });
+
+  describe('remove', () => {
+    it('should remove a program', async () => {
+      const result = { message: 'Program deleted successfully' };
+      jest
+        .spyOn(prismaService.program, 'delete')
+        .mockResolvedValue(result as any);
+
+      expect(await service.remove(1)).toEqual(result);
+    });
+  });
 });

@@ -69,4 +69,15 @@ describe('StatusService', () => {
       expect(await service.update(1, dto)).toEqual(result);
     });
   });
+
+  describe('remove', () => {
+    it('should remove a status', async () => {
+      const result = { message: 'Status deleted successfully' };
+      jest
+        .spyOn(prismaService.studentStatus, 'delete')
+        .mockResolvedValue(result as any);
+
+      expect(await service.remove(1)).toEqual(result);
+    });
+  });
 });

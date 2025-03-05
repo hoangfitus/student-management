@@ -8,6 +8,7 @@ describe('StatusController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     update: jest.fn(),
+    remove: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -70,6 +71,15 @@ describe('StatusController', () => {
       mockStatusService.update.mockResolvedValue(result);
 
       expect(await controller.update('1', dto)).toEqual(result);
+    });
+  });
+
+  describe('remove', () => {
+    it('should remove a status', async () => {
+      const result = { message: 'Status deleted successfully' };
+      mockStatusService.remove.mockResolvedValue(result);
+
+      expect(await controller.remove('1')).toEqual(result);
     });
   });
 });
