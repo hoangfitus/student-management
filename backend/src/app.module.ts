@@ -6,19 +6,19 @@ import { ProgramModule } from './program/program.module';
 import { StatusModule } from './status/status.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { DataModule } from './data/data.module';
-import { ConfigModule } from '@nestjs/config';
+import { UploadModule } from './upload/upload.module';
+import { ConfigModule } from './config/config.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     StudentModule,
     FacultyModule,
     ProgramModule,
     StatusModule,
     PrismaModule,
     DataModule,
+    ConfigModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [Logger],
