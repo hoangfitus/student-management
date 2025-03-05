@@ -1,66 +1,70 @@
-# Student Management Web Application - Version 3.0
+# Student Management Web Application - Version 4.0
 
-This is a lightweight web application built with NestJS, Prisma, React, and SQLite for managing a list of students. Version 3.0 introduces stricter validation rules and configurable constraints to ensure data consistency and improve business logic enforcement.
+This is a lightweight web application built with NestJS, Prisma, React, and PostgreSQL for managing a list of students. Version 4.0 introduces stricter validation rules and configurable constraints to ensure data consistency and improve business logic enforcement.
 
-## New Features in Version 3.0
+## New Features in Version 4.0
 
-### 1. MSSV Uniqueness
-
-- **Requirement:**  
-  The student MSSV must be unique.
-- **Implementation:**  
-  When creating or updating a student, the system checks if the provided MSSV already exists. If so, it rejects the request.
-
-### 2. Configurable Email Domain Validation
+### 1. Cloud Image Storage with Cloudinary
 
 - **Requirement:**  
-  The student's email must belong to a specified domain (e.g., `@student.university.edu.vn`).
+  Store school logo images in the cloud to ensure availability and scalability.
 - **Implementation:**  
-  The allowed email domain is configurable via environment variables.
+  Utilize Cloudinary for image storage and management, featuring:
+  - Direct image upload to Cloudinary
+  - Automatic image optimization
+  - Secure and globally accessible URLs
 
-### 3. Configurable Phone Number Validation
+### 2. School Configuration Management
 
-- **Requirement:**  
-  Phone numbers must be valid for the country (e.g., Vietnam).
-- **Implementation:**  
-  A regular expression validates the phone number in both local and international formats (e.g., `0[3|5|7|8|9]xxxxxxxx` or `+84[3|5|7|8|9]xxxxxxxx`).
+- **Dynamic School Settings:**
+  - Manage school information (name, address, logo, colors)
+  - Configure allowed email domains
+  - Customize interface based on configuration
 
-### 4. Student Status Transition Rules
+### 3. Student Verification PDF/MD Generation
 
-- **Requirement:**  
-  The student's status can only change following certain rules:
-  - If the current status is `"Đang học"`, it may change only to `"Bảo lưu"`, `"Tốt nghiệp"`, or `"Đình chỉ"`.
-  - If the current status is `"Đã tốt nghiệp"`, it cannot revert to `"Đang học"`.
-- **Implementation:**  
-  The update service enforces these rules when processing status updates.
+- **Feature:**
+  - Generate official student verification documents
+  - Customizable templates with school branding
+  - Support for multiple verification purposes
+  - Digital format for easy sharing and printing
+
+### 4. Student Deletion with Time Constraint
+
+- **Feature:**
+  - Delete students with a configurable time constraint
+  - Prevent deletion of students who have been added recently
+
+### 5. School Logo and Name Display
+
+- **Feature:**
+  - Display school logo and name in the application
+  - Customize the display based on configuration
 
 ## Additional Enhancements
 
-- **Improved Data Import/Export:**
-  - Supports importing data from both Excel and CSV formats.
-  - Handles Excel serial dates (e.g., `37165.29201388889`) by converting them to proper DateTime values.
-  - Ensures Unicode text (e.g., Vietnamese characters) is correctly decoded.
-- **Prisma & NestJS Integration:**  
-  Uses Prisma as the ORM with SQLite as the database and leverages NestJS's modular architecture for improved maintainability and testability.
-- **Dynamic Configuration:**  
-  Environment variables (via the ConfigModule) allow dynamic configuration of allowed email domain and other validation parameters.
-- **Validation & Error Handling:**  
-  DTOs enforce strict validation rules for MSSV, email, and phone number formats.
-- **Global Validation:**  
-  The global `ValidationPipe` ensures that all incoming requests conform to the defined DTOs before reaching the controllers.
+### 1. PostgreSQL Database
+
+- **Feature:**
+  - Use PostgreSQL as the database
+  - Implement Prisma ORM for database operations
+  - Provide sample data for testing
+
+### 2. Banner Color Customization
+
+- **Feature:**
+  - Customize the banner color based on configuration
 
 ## Screenshots
 
 ![Main Screen](./screenshots/main-screen.png)
 ![Add Student Screen](./screenshots/add-student-screen.png)
-![Add Error Screen](./screenshots/add-error-screen.png)
-![Main Student Screen](./screenshots/main-student-screen.png)
-![Find Student By Faculty Screen](./screenshots/find-by-faculty-screen.png)
-![Find Student By Faculty and Name Screen](./screenshots/find-by-fandn-screen.png)
 ![Category Management Screen](./screenshots/category-management-screen.png)
-![Add Category Screen](./screenshots/add-category-screen.png)
-![Edit Category Screen](./screenshots/edit-category-screen.png)
-![Import Excel Screen](./screenshots/import-excel-screen.png)
+![Export Student Verification Screen](./screenshots/export-student-verification-screen.png)
+![Export Student Verification Options](./screenshots/export-student-verification-options.png)
+![Student Verification Pdf](./screenshots/student-verification-pdf.png)
+![Settings Screen](./screenshots/settings-screen.png)
+![Input Settings Screen](./screenshots/input-settings-screen.png)
 
 ## Source Code Structure
 
@@ -70,6 +74,11 @@ student-management/
 ├── src/
 │   ├── components/     # UI components
 │   ├── hooks/          # Custom hooks
+│   ├── pages/          # Pages
+│   ├── services/       # RTK Query services
+│   ├── app/            # Redux Toolkit store, provider, and hooks
+│   ├── features/       # Feature modules
+│   ├── middleware/     # Middleware
 │   ├── App.tsx         # Main application component
 │   ├── main.tsx        # Application entry point
 │   ├── types.d.ts      # Data types
@@ -82,6 +91,10 @@ student-management/
 │   │   ├── faculty     # Faculty controller and service
 │   │   ├── program     # Program controller and service
 │   │   ├── status      # Student status controller and service
+│   │   ├── config      # School configuration controller and service
+│   │   ├── upload      # Upload controller and service
+│   │   ├── data        # Data controller and service
+│   │   ├── logger      # Logger controller and service
 │   │   ├── main.ts     # Main server file
 │   ├── .env            # Environment variables
 │   ├── .env.example    # Example environment variables
@@ -145,7 +158,10 @@ Access the app at `http://localhost:5173`
 Add a `.env` file in the `backend/` folder with the following content:
 
 ```plaintext
-ALLOWED_EMAIL_DOMAIN=your.email.domain
+DATABASE_URL=your_postgresql_database_url
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 Run Prisma migrations and seed initial data:
@@ -217,3 +233,33 @@ All backend operations are logged using Winston. The log files are stored in the
 
 - **Global Validation:**
   All incoming data is validated by a global validation pipe before being processed.
+
+## Environment Configuration
+
+Add the following environment variables to your `.env` file:
+
+```plaintext
+DATABASE_URL=your_postgresql_database_url
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+## File Upload Guidelines
+
+### Supported Image Formats
+
+- JPG/JPEG
+- PNG
+- GIF
+
+### Size Limits
+
+- Maximum file size: 5MB
+- Recommended dimensions for logo: 200x200px
+
+### Security
+
+- Automatic file type validation
+- Secure URL generation
+- Cloud storage with backup
