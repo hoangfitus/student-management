@@ -48,8 +48,8 @@ export const SettingsPage: React.FC = () => {
   >("faculty");
 
   const { data: configData } = useGetConfigQuery();
-  const [updateConfig] = useUpdateConfigMutation();
-  const [createConfig] = useCreateConfigMutation();
+  const [updateConfig, { isLoading: isUpdating }] = useUpdateConfigMutation();
+  const [createConfig, { isLoading: isCreating }] = useCreateConfigMutation();
 
   const getConfigValue = React.useCallback(
     (name: string, defaultValue: string = "") =>
@@ -353,6 +353,7 @@ export const SettingsPage: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={handleSaveAllConfig}
+            loading={isUpdating || isCreating}
           >
             Lưu thay đổi
           </Button>
