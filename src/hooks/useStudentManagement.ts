@@ -21,9 +21,10 @@ export const useStudentManagement = () => {
     rowsPerPage,
   });
 
-  const [addStudent] = useAddStudentMutation();
-  const [updateStudent] = useUpdateStudentMutation();
-  const [deleteStudent] = useDeleteStudentByIdMutation();
+  const [addStudent, { isLoading: isAdding }] = useAddStudentMutation();
+  const [updateStudent, { isLoading: isUpdating }] = useUpdateStudentMutation();
+  const [deleteStudent, { isLoading: isDeleting }] =
+    useDeleteStudentByIdMutation();
 
   return {
     page,
@@ -36,7 +37,10 @@ export const useStudentManagement = () => {
     setFacultyFilter,
     studentData,
     addStudent,
+    isAdding,
     updateStudent,
+    isUpdating,
     deleteStudent,
+    isDeleting,
   };
 };

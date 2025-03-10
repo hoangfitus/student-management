@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Container, Dialog, DialogTitle, DialogContent } from "@mui/material";
+import {
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+} from "@mui/material";
 import {
   StudentToolbar,
   StudentFilters,
@@ -14,10 +21,13 @@ import {
 import type { Student } from "@app/types";
 import { SelectChangeEvent } from "@mui/material";
 import { useGetConfigByNameQuery } from "@app/services/config";
+import { toast } from "react-toastify";
 
 export const HomePage: React.FC = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
 
   const {
     page,
@@ -32,6 +42,7 @@ export const HomePage: React.FC = () => {
     addStudent,
     updateStudent,
     deleteStudent,
+    isDeleting,
   } = useStudentManagement();
 
   const {
@@ -44,6 +55,9 @@ export const HomePage: React.FC = () => {
 
   const { facultiesData, programsData, statusesData } = useCategories();
   const { data: allowedDomain } = useGetConfigByNameQuery("allowed_domain");
+  const { data: isDomainRuleActive } = useGetConfigByNameQuery(
+    "apply_email_domain_rule"
+  );
 
   const handleOpenStudentDialog = (student?: Student) => {
     setEditingStudent(student || null);
@@ -77,6 +91,23 @@ export const HomePage: React.FC = () => {
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleDeleteStudent = (mssv: string) => {
+    setStudentToDelete(mssv);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteStudent = async () => {
+    if (studentToDelete) {
+      await deleteStudent(studentToDelete)
+        .unwrap()
+        .then(() => toast.success("Student deleted successfully"))
+        .finally(() => {
+          setDeleteDialogOpen(false);
+          setStudentToDelete(null);
+        });
+    }
   };
 
   return (
@@ -119,7 +150,7 @@ export const HomePage: React.FC = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
         onEdit={handleOpenStudentDialog}
-        onDelete={deleteStudent}
+        onDelete={handleDeleteStudent}
         onExportCertificate={exportCertificate}
       />
 
@@ -138,11 +169,37 @@ export const HomePage: React.FC = () => {
             faculties={facultiesData?.map((f) => f.name)}
             programs={programsData?.map((p) => p.name)}
             statuses={statusesData?.map((s) => s.name)}
+            isDomainRuleActive={isDomainRuleActive?.value === "true"}
             allowedDomain={allowedDomain?.value || "gmail.com"}
             onSubmit={onSubmitStudent}
             onCancel={() => setModalOpen(false)}
           />
         </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Xác nhận xóa sinh viên</DialogTitle>
+        <DialogContent>
+          Bạn có chắc chắn muốn xóa sinh viên này không?
+        </DialogContent>
+        <DialogActions>
+          <Button
+            loading={isDeleting}
+            onClick={() => setDeleteDialogOpen(false)}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={confirmDeleteStudent}
+            loading={isDeleting}
+            color="primary"
+          >
+            Xóa
+          </Button>
+        </DialogActions>
       </Dialog>
     </Container>
   );

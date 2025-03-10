@@ -56,7 +56,6 @@ export const ExportCertificateModal: React.FC<ExportCertificateModalProps> = ({
   const handleReasonChange = (event: SelectChangeEvent<string>) => {
     setReason(event.target.value);
     setIsOtherReason(false);
-    console.log("event.target.value", event.target.value);
     setCustomReason("");
     if (event.target.value !== "other") {
       generateCertificate({
@@ -67,7 +66,6 @@ export const ExportCertificateModal: React.FC<ExportCertificateModalProps> = ({
   };
 
   const handleSubmitOtherReason = () => {
-    console.log("customReason", customReason);
     setIsOtherReason(true);
     generateCertificate({
       id: student.mssv,

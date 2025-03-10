@@ -4,12 +4,14 @@ import * as xlsx from 'xlsx';
 import * as csv from 'fast-csv';
 import { Student } from '@prisma/client';
 import { Readable } from 'stream';
+import { DateFormatService } from 'src/common/date-format.service';
 
 @Injectable()
 export class DataService {
   constructor(
     private prisma: PrismaService,
     private readonly logger: Logger,
+    private readonly dateFormatService: DateFormatService,
   ) {}
 
   private formatPhone(phone: string | number): string {
@@ -54,7 +56,7 @@ export class DataService {
               data: {
                 mssv: row.mssv,
                 name: row.name,
-                dob: row.dob, // CSV data is assumed to be in valid format
+                dob: this.dateFormatService.formatDate(row.dob),
                 gender: row.gender,
                 faculty: row.faculty,
                 course: row.course.toString(),
@@ -103,7 +105,9 @@ export class DataService {
             data: {
               mssv: row.mssv.toString(),
               name: row.name,
-              dob: this.convertExcelSerialDateToLocaleDateString(row.dob),
+              dob: this.dateFormatService.formatDate(
+                this.convertExcelSerialDateToLocaleDateString(row.dob),
+              ),
               gender: row.gender,
               faculty: row.faculty,
               course: row.course.toString(),

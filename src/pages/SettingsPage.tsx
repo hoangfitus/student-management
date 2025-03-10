@@ -8,6 +8,10 @@ import {
   TextField,
   Paper,
   Grid,
+  Switch,
+  FormControlLabel,
+  Stack,
+  Badge,
 } from "@mui/material";
 import { CategoryModal } from "@app/components";
 import { useCategories } from "@app/hooks";
@@ -31,6 +35,12 @@ interface SchoolConfig {
   bannerColor: string;
 }
 
+interface SystemConfig {
+  deleteStudentInTime: boolean;
+  updateStudentStatusWithRule: boolean;
+  applyEmailDomainRule: boolean;
+}
+
 export const SettingsPage: React.FC = () => {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [currentCatType, setCurrentCatType] = useState<
@@ -41,49 +51,53 @@ export const SettingsPage: React.FC = () => {
   const [updateConfig] = useUpdateConfigMutation();
   const [createConfig] = useCreateConfigMutation();
 
+  const getConfigValue = React.useCallback(
+    (name: string, defaultValue: string = "") =>
+      configData?.find((item) => item.name === name)?.value || defaultValue,
+    [configData]
+  );
+
   const [schoolConfig, setSchoolConfig] = useState<SchoolConfig>({
-    name: configData?.find((item) => item.name === "school_name")?.value || "",
-    address:
-      configData?.find((item) => item.name === "school_address")?.value || "",
-    phone:
-      configData?.find((item) => item.name === "school_phone")?.value || "",
-    email:
-      configData?.find((item) => item.name === "school_email")?.value || "",
-    allowedDomain:
-      configData?.find((item) => item.name === "allowed_domain")?.value ||
-      "gmail.com",
-    image:
-      configData?.find((item) => item.name === "school_image")?.value || "",
-    bannerColor:
-      configData?.find((item) => item.name === "school_banner_color")?.value ||
-      "",
+    name: getConfigValue("school_name"),
+    address: getConfigValue("school_address"),
+    phone: getConfigValue("school_phone"),
+    email: getConfigValue("school_email"),
+    allowedDomain: getConfigValue("allowed_domain", "gmail.com"),
+    image: getConfigValue("school_image"),
+    bannerColor: getConfigValue("school_banner_color"),
+  });
+
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>({
+    deleteStudentInTime: getConfigValue("delete_student_in_time") === "true",
+    updateStudentStatusWithRule:
+      getConfigValue("update_student_status_with_rule") === "true",
+    applyEmailDomainRule: getConfigValue("apply_email_domain_rule") === "true",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (configData) {
       setSchoolConfig({
-        name:
-          configData.find((item) => item.name === "school_name")?.value || "",
-        address:
-          configData.find((item) => item.name === "school_address")?.value ||
-          "",
-        phone:
-          configData.find((item) => item.name === "school_phone")?.value || "",
-        email:
-          configData.find((item) => item.name === "school_email")?.value || "",
-        allowedDomain:
-          configData.find((item) => item.name === "allowed_domain")?.value ||
-          "gmail.com",
-        image:
-          configData.find((item) => item.name === "school_image")?.value || "",
-        bannerColor:
-          configData.find((item) => item.name === "school_banner_color")
-            ?.value || "",
+        name: getConfigValue("school_name"),
+        address: getConfigValue("school_address"),
+        phone: getConfigValue("school_phone"),
+        email: getConfigValue("school_email"),
+        allowedDomain: getConfigValue("allowed_domain", "gmail.com"),
+        image: getConfigValue("school_image"),
+        bannerColor: getConfigValue("school_banner_color"),
+      });
+      setSystemConfig({
+        deleteStudentInTime:
+          getConfigValue("delete_student_in_time") === "true",
+        updateStudentStatusWithRule:
+          getConfigValue("update_student_status_with_rule") === "true",
+        applyEmailDomainRule:
+          getConfigValue("apply_email_domain_rule") === "true",
       });
     }
-  }, [configData]);
+  }, [configData, getConfigValue]);
 
   const {
     facultiesData,
@@ -105,10 +119,22 @@ export const SettingsPage: React.FC = () => {
         ...prev,
         [field]: typeof event === "string" ? event : event.target.value,
       }));
+      setUnsavedChanges(true);
+    };
+
+  const handleToggleChange =
+    (field: keyof SystemConfig) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSystemConfig((prev) => ({
+        ...prev,
+        [field]: event.target.checked,
+      }));
+      setUnsavedChanges(true);
     };
 
   const handleImageChange = (newFile: File | null) => {
     setImageFile(newFile);
+    setUnsavedChanges(true);
   };
 
   const handleSaveAllConfig = async () => {
@@ -129,6 +155,18 @@ export const SettingsPage: React.FC = () => {
         { name: "allowed_domain", value: schoolConfig.allowedDomain },
         { name: "school_image", value: imageUrl },
         { name: "school_banner_color", value: schoolConfig.bannerColor },
+        {
+          name: "delete_student_in_time",
+          value: systemConfig.deleteStudentInTime ? "true" : "false",
+        },
+        {
+          name: "update_student_status_with_rule",
+          value: systemConfig.updateStudentStatusWithRule ? "true" : "false",
+        },
+        {
+          name: "apply_email_domain_rule",
+          value: systemConfig.applyEmailDomainRule ? "true" : "false",
+        },
       ]
         .filter((item) => item.value.trim() !== "") // Chỉ lấy các mục có giá trị
         .filter((item) => {
@@ -152,7 +190,6 @@ export const SettingsPage: React.FC = () => {
             value: item.value,
           }).unwrap();
         } else {
-          console.log("Creating new config:", item);
           await createConfig({
             name: item.name,
             value: item.value,
@@ -164,6 +201,8 @@ export const SettingsPage: React.FC = () => {
     } catch (error) {
       toast.error("Có lỗi xảy ra khi cập nhật thông tin!");
       console.error(error);
+    } finally {
+      setUnsavedChanges(false);
     }
   };
 
@@ -231,57 +270,94 @@ export const SettingsPage: React.FC = () => {
                 onChange={handleConfigChange("allowedDomain")}
                 helperText="Domain email được phép sử dụng trong hệ thống"
               />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSaveAllConfig}
-              >
-                Lưu thay đổi
-              </Button>
             </Box>
           </Paper>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Quản lý danh mục
-            </Typography>
-            <ButtonGroup
-              variant="outlined"
-              color="primary"
-              orientation="vertical"
-              fullWidth
-            >
-              <Button
-                onClick={() => {
-                  setCurrentCatType("faculty");
-                  setCategoryModalOpen(true);
-                }}
+          <Stack spacing={2}>
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Quản lý danh mục
+              </Typography>
+              <ButtonGroup
+                variant="outlined"
+                color="primary"
+                orientation="vertical"
+                fullWidth
               >
-                Quản lý Khoa
-              </Button>
-              <Button
-                onClick={() => {
-                  setCurrentCatType("status");
-                  setCategoryModalOpen(true);
-                }}
-              >
-                Quản lý Tình trạng
-              </Button>
-              <Button
-                onClick={() => {
-                  setCurrentCatType("program");
-                  setCategoryModalOpen(true);
-                }}
-              >
-                Quản lý Chương trình
-              </Button>
-            </ButtonGroup>
-          </Paper>
+                <Button
+                  onClick={() => {
+                    setCurrentCatType("faculty");
+                    setCategoryModalOpen(true);
+                  }}
+                >
+                  Quản lý Khoa
+                </Button>
+                <Button
+                  onClick={() => {
+                    setCurrentCatType("status");
+                    setCategoryModalOpen(true);
+                  }}
+                >
+                  Quản lý Tình trạng
+                </Button>
+                <Button
+                  onClick={() => {
+                    setCurrentCatType("program");
+                    setCategoryModalOpen(true);
+                  }}
+                >
+                  Quản lý Chương trình
+                </Button>
+              </ButtonGroup>
+            </Paper>
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Quản lý quy định
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={systemConfig.deleteStudentInTime}
+                    onChange={handleToggleChange("deleteStudentInTime")}
+                  />
+                }
+                label="Chỉ xóa sinh viên trong thời gian quy định từ khi tạo"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={systemConfig.updateStudentStatusWithRule}
+                    onChange={handleToggleChange("updateStudentStatusWithRule")}
+                  />
+                }
+                label="Chỉ cập nhật tình trạng sinh viên theo quy định"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={systemConfig.applyEmailDomainRule}
+                    onChange={handleToggleChange("applyEmailDomainRule")}
+                  />
+                }
+                label="Áp dụng quy tắc domain email cho sinh viên"
+              />
+            </Paper>
+          </Stack>
         </Grid>
       </Grid>
-
+      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Badge color="secondary" variant="dot" invisible={!unsavedChanges}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveAllConfig}
+          >
+            Lưu thay đổi
+          </Button>
+        </Badge>
+      </Box>
       <CategoryModal
         open={categoryModalOpen}
         onClose={() => setCategoryModalOpen(false)}

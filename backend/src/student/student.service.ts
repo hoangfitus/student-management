@@ -8,6 +8,8 @@ import { Prisma, Student } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { ConfigService } from 'src/config/config.service';
+import { DateFormatService } from 'src/common/date-format.service';
 
 @Injectable()
 export class StudentService {
@@ -21,6 +23,8 @@ export class StudentService {
   constructor(
     private prisma: PrismaService,
     private readonly logger: Logger,
+    private readonly configService: ConfigService,
+    private readonly dateFormatService: DateFormatService,
   ) {}
 
   async create(
@@ -28,7 +32,10 @@ export class StudentService {
   ): Promise<{ message: string; student: Student }> {
     try {
       const student = await this.prisma.student.create({
-        data: createStudentDto,
+        data: {
+          ...createStudentDto,
+          dob: this.dateFormatService.formatDate(createStudentDto.dob),
+        },
       });
 
       this.logger.log(`Student created: ${student.name}`);
@@ -46,7 +53,7 @@ export class StudentService {
     faculty: string,
     page: number,
     limit: number,
-  ): Promise<{ total: number; students: Student[] }> {
+  ): Promise<{ total: number; students: Partial<Student>[] }> {
     try {
       const whereClause = this.buildWhereClause(search, faculty);
 
@@ -61,7 +68,10 @@ export class StudentService {
       ]);
 
       this.logger.log('Fetching all students');
-      return { total, students };
+      const studentsWithoutCreatedAt = students.map(
+        ({ createdAt, ...student }) => student,
+      );
+      return { total, students: studentsWithoutCreatedAt };
     } catch (error) {
       this.handlePrismaError(error, 'fetching');
     }
@@ -73,14 +83,19 @@ export class StudentService {
   ): Promise<{ message: string; student: Student }> {
     try {
       const existing = await this.findStudentOrThrow(id);
+      const isStatusTransitionConditionActive =
+        await this.isStatusTransitionConditionActive();
 
-      if (updateStudentDto.status) {
+      if (updateStudentDto.status && isStatusTransitionConditionActive) {
         this.validateStatusTransition(existing.status, updateStudentDto.status);
       }
 
       const updatedStudent = await this.prisma.student.update({
         where: { mssv: id.toString() },
-        data: this.formatUpdateData(updateStudentDto, existing),
+        data: {
+          ...updateStudentDto,
+          dob: this.dateFormatService.formatDate(updateStudentDto.dob),
+        },
       });
 
       this.logger.log(`Student updated: ${id}`);
@@ -97,7 +112,10 @@ export class StudentService {
   async remove(id: number): Promise<{ message: string }> {
     try {
       const student = await this.findStudentOrThrow(id);
-      this.validateDeletionTimeLimit(student.createdAt);
+      const isDeletionConditionActive = await this.isDeletionConditionActive();
+
+      if (isDeletionConditionActive)
+        this.validateDeletionTimeLimit(student.createdAt);
 
       await this.prisma.student.delete({
         where: { mssv: id.toString() },
@@ -147,6 +165,17 @@ export class StudentService {
     return student;
   }
 
+  private async isStatusTransitionConditionActive(): Promise<boolean> {
+    return await this.configService
+      .findByName('update_student_status_with_rule')
+      .then((config) => {
+        return config.value === 'true';
+      })
+      .catch(() => {
+        return false;
+      });
+  }
+
   private validateStatusTransition(
     currentStatus: string,
     newStatus: string,
@@ -159,6 +188,17 @@ export class StudentService {
     }
   }
 
+  private async isDeletionConditionActive(): Promise<boolean> {
+    return await this.configService
+      .findByName('delete_student_in_time')
+      .then((config) => {
+        return config.value === 'true';
+      })
+      .catch(() => {
+        return false;
+      });
+  }
+
   private validateDeletionTimeLimit(createdAt: Date): void {
     const diffInMinutes =
       (new Date().getTime() - new Date(createdAt).getTime()) / 60000;
@@ -168,18 +208,6 @@ export class StudentService {
         `Cannot delete student after ${this.DELETE_TIME_LIMIT} minutes from creation`,
       );
     }
-  }
-
-  private formatUpdateData(
-    updateDto: UpdateStudentDto,
-    existing: Student,
-  ): Prisma.StudentUpdateInput {
-    return {
-      ...updateDto,
-      dob: updateDto.dob
-        ? new Date(updateDto.dob).toLocaleString('vi-VN')
-        : existing.dob,
-    };
   }
 
   private handlePrismaError(error: any, operation: string): never {
