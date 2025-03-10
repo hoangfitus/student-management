@@ -23,7 +23,7 @@ describe('StudentService', () => {
     address: 'Test Address',
     email: 'test@example.com',
     phone: '0123456789',
-    status: 'Đang học',
+    status: 'Đang theo học',
     createdAt: new Date('2020-01-01T00:00:00.000Z'),
   };
 
@@ -171,7 +171,7 @@ describe('StudentService', () => {
   describe('update', () => {
     const updateDto = {
       name: 'Updated Name',
-      status: 'Đã tốt nghiệp',
+      status: 'Đã hoàn thành chương trình, chờ xét tốt nghiệp',
       dob: '16-01-2000',
     };
 

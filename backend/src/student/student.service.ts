@@ -13,9 +13,31 @@ import { DateFormatService } from '../common/date-format.service';
 
 @Injectable()
 export class StudentService {
-  private readonly ALLOWED_STATUS_TRANSITIONS = {
-    'Đang học': ['Đã tốt nghiệp', 'Đã thôi học', 'Tạm dừng học'],
-    'Đã tốt nghiệp': ['Đã thôi học'],
+  private readonly NOT_ALLOWED_STATUS_TRANSITIONS = {
+    'Đang theo học': ['Đã tốt nghiệp'],
+    'Đã hoàn thành chương trình, chờ xét tốt nghiệp': [
+      'Đang theo học',
+      'Đình chỉ học tập',
+      'Bảo lưu',
+    ],
+    'Đã tốt nghiệp': [
+      'Đang theo học',
+      'Đình chỉ học tập',
+      'Đã hoàn thành chương trình, chờ xét tốt nghiệp',
+      'Bảo lưu',
+      'Tình trạng khác',
+    ],
+    'Bảo lưu': [
+      'Đã hoàn thành chương trình, chờ xét tốt nghiệp',
+      'Đã tốt nghiệp',
+      'Đình chỉ học tập',
+    ],
+    'Đình chỉ học tập': [
+      'Đã hoàn thành chương trình, chờ xét tốt nghiệp',
+      'Đã tốt nghiệp',
+      'Bảo lưu',
+    ],
+    'Tình trạng khác': ['Đã tốt nghiệp'],
   };
 
   private readonly DELETE_TIME_LIMIT = 30; // minutes
@@ -180,8 +202,9 @@ export class StudentService {
     currentStatus: string,
     newStatus: string,
   ): void {
-    const allowedTransitions = this.ALLOWED_STATUS_TRANSITIONS[currentStatus];
-    if (allowedTransitions && !allowedTransitions.includes(newStatus)) {
+    const notAllowedTransition =
+      this.NOT_ALLOWED_STATUS_TRANSITIONS[currentStatus];
+    if (!notAllowedTransition || notAllowedTransition.includes(newStatus)) {
       throw new BadRequestException(
         `Invalid status transition from "${currentStatus}" to "${newStatus}"`,
       );
