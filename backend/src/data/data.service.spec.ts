@@ -6,15 +6,18 @@ import { Student } from '@prisma/client';
 import * as csv from 'fast-csv';
 import * as xlsx from 'xlsx';
 import { Readable } from 'stream';
+import { CommonModule } from '../common/common.module';
 
 describe('DataService', () => {
   let service: DataService;
   let prismaService: PrismaService;
 
+  // Note: Since the DateFormatService formats dates as "dd-mm-yyyy",
+  // our expected DOB values have been updated accordingly.
   const mockStudent: Student = {
     mssv: '12345',
     name: 'Test Student',
-    dob: '01/01/2000',
+    dob: '01-01-2000',
     gender: 'Nam',
     faculty: 'CNTT',
     course: '2020',
@@ -35,6 +38,7 @@ describe('DataService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CommonModule],
       providers: [
         DataService,
         {
@@ -45,6 +49,8 @@ describe('DataService', () => {
               createMany: jest.fn(),
               findMany: jest.fn(),
               findUnique: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
             },
             config: {
               findUnique: jest.fn(),
@@ -74,10 +80,12 @@ describe('DataService', () => {
   });
 
   describe('importCSV', () => {
+    // When importing CSV, if the DOB input is "2000-01-15", the DateFormatService
+    // will format it to "15-01-2000".
     const validStudent: Student = {
       mssv: '20000001',
       name: 'Test Student',
-      dob: '2000-01-15',
+      dob: '15-01-2000',
       gender: 'Nam',
       faculty: 'Test Faculty',
       course: '2020',
@@ -99,6 +107,8 @@ describe('DataService', () => {
         buffer: Buffer.from(csvContent, 'utf-8'),
       } as Express.Multer.File;
 
+      // The first call resolves to a valid student with DOB formatted as "15-01-2000"
+      // and the second row throws an error.
       jest
         .spyOn(prismaService.student, 'create')
         .mockResolvedValueOnce(validStudent)
@@ -129,10 +139,12 @@ describe('DataService', () => {
   });
 
   describe('importExcel', () => {
+    // For Excel import, after converting the Excel serial and formatting,
+    // the DOB should be "15-01-2000".
     const validStudent: Student = {
       mssv: '20000001',
       name: 'Test Student',
-      dob: '15/1/2000',
+      dob: '15-01-2000',
       gender: 'Nam',
       faculty: 'Test Faculty',
       course: '2020',
@@ -149,7 +161,9 @@ describe('DataService', () => {
         {
           mssv: '20000001',
           name: 'Test Student',
-          dob: 43831,
+          // The Excel serial number below should represent a date that,
+          // when processed, results in "15-01-2000".
+          dob: 36540, // Excel serial for January 15, 2000
           gender: 'Nam',
           faculty: 'Test Faculty',
           course: '2020',
@@ -187,7 +201,7 @@ describe('DataService', () => {
         {
           mssv: '20000001',
           name: 'Test Student',
-          dob: '2000-01-15',
+          dob: '15-01-2000',
           gender: 'Nam',
           faculty: 'Test Faculty',
           course: '2020',
@@ -224,7 +238,7 @@ describe('DataService', () => {
         {
           mssv: '20000001',
           name: 'Test Student',
-          dob: '2000-01-15',
+          dob: '15-01-2000',
           gender: 'Nam',
           faculty: 'Test Faculty',
           course: '2020',
@@ -276,7 +290,7 @@ describe('DataService', () => {
         content: expect.stringContaining(mockStudent.name),
       });
 
-      // Kiểm tra thời hạn hiệu lực cho vay vốn (6 tháng)
+      // Check that the validity period for the bank loan case is 6 months
       const daysDiff = Math.round(
         (result.to.getTime() - result.from.getTime()) / (1000 * 60 * 60 * 24),
       );

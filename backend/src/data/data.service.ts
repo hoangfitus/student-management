@@ -4,7 +4,7 @@ import * as xlsx from 'xlsx';
 import * as csv from 'fast-csv';
 import { Student } from '@prisma/client';
 import { Readable } from 'stream';
-import { DateFormatService } from 'src/common/date-format.service';
+import { DateFormatService } from '../common/date-format.service';
 
 @Injectable()
 export class DataService {

@@ -8,8 +8,8 @@ import { Prisma, Student } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
-import { ConfigService } from 'src/config/config.service';
-import { DateFormatService } from 'src/common/date-format.service';
+import { ConfigService } from '../config/config.service';
+import { DateFormatService } from '../common/date-format.service';
 
 @Injectable()
 export class StudentService {
