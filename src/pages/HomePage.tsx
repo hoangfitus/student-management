@@ -40,7 +40,9 @@ export const HomePage: React.FC = () => {
     setFacultyFilter,
     studentData,
     addStudent,
+    isAdding,
     updateStudent,
+    isUpdating,
     deleteStudent,
     isDeleting,
   } = useStudentManagement();
@@ -65,13 +67,18 @@ export const HomePage: React.FC = () => {
   };
 
   const onSubmitStudent = async (student: Student) => {
-    if (editingStudent) {
-      await updateStudent(student).unwrap();
-    } else {
-      await addStudent(student).unwrap();
+    try {
+      let data = null;
+      if (editingStudent) {
+        data = await updateStudent(student).unwrap();
+      } else {
+        data = await addStudent(student).unwrap();
+      }
+      toast.success(data?.message);
+    } finally {
+      setModalOpen(false);
+      setEditingStudent(null);
     }
-    setModalOpen(false);
-    setEditingStudent(null);
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,6 +179,7 @@ export const HomePage: React.FC = () => {
             isDomainRuleActive={isDomainRuleActive?.value === "true"}
             allowedDomain={allowedDomain?.value || "gmail.com"}
             onSubmit={onSubmitStudent}
+            isSubmitting={isAdding || isUpdating}
             onCancel={() => setModalOpen(false)}
           />
         </DialogContent>

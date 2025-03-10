@@ -15,6 +15,7 @@ interface AddStudentFormProps {
   isDomainRuleActive: boolean;
   allowedDomain: string;
   onSubmit: (data: Student) => void;
+  isSubmitting?: boolean;
   onCancel?: () => void;
 }
 
@@ -85,6 +86,7 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({
   isDomainRuleActive,
   allowedDomain,
   onSubmit,
+  isSubmitting,
   onCancel,
 }) => {
   const schema = useMemo(
@@ -314,6 +316,7 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({
               <Button
                 variant="outlined"
                 color="secondary"
+                loading={isSubmitting}
                 onClick={() => {
                   reset();
                   onCancel();
@@ -324,7 +327,12 @@ export const AddStudentForm: React.FC<AddStudentFormProps> = ({
             </Grid2>
           )}
           <Grid2>
-            <Button type="submit" variant="contained" color="primary">
+            <Button
+              loading={isSubmitting}
+              type="submit"
+              variant="contained"
+              color="primary"
+            >
               {defaultValues ? "Cập nhật" : "Thêm"}
             </Button>
           </Grid2>

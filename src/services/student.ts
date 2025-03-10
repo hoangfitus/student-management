@@ -21,7 +21,10 @@ export const studentApi = createApi({
       },
       providesTags: ["Student"],
     }),
-    addStudent: builder.mutation<Student, Partial<Student>>({
+    addStudent: builder.mutation<
+      { message: string; student: Student },
+      Partial<Student>
+    >({
       query: (body) => ({
         url: `student`,
         method: "POST",
@@ -33,7 +36,7 @@ export const studentApi = createApi({
       invalidatesTags: ["Student"],
     }),
     updateStudent: builder.mutation<
-      Student,
+      { message: string; student: Student },
       Partial<Student> & Pick<Student, "mssv">
     >({
       query: ({ mssv, ...rest }) => ({
